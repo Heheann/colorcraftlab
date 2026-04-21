@@ -1,0 +1,4960 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <title>《朋友收集》色盤對照工具</title>
+  <style>
+    :root {
+      --bg: #fbf3e4;
+      --bg-strong: #f4e4ca;
+      --surface: rgba(255, 251, 245, 0.9);
+      --surface-strong: rgba(255, 248, 238, 0.98);
+      --panel: rgba(255, 255, 255, 0.72);
+      --line: rgba(130, 108, 83, 0.18);
+      --line-strong: rgba(130, 108, 83, 0.3);
+      --ink: #2f312d;
+      --ink-soft: #5c6057;
+      --accent: #ff7f60;
+      --accent-deep: #e36145;
+      --accent-mint: #5fa69d;
+      --accent-mint-deep: #337c73;
+      --accent-gold: #e2b965;
+      --danger: #c84b4b;
+      --shadow: 0 22px 60px rgba(95, 74, 48, 0.12);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --page-width: 1400px;
+      --header-font: "Trebuchet MS", "Microsoft JhengHei", "PingFang TC", sans-serif;
+      --body-font: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--body-font);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(255, 208, 156, 0.44), transparent 28%),
+        radial-gradient(circle at top left, rgba(116, 196, 188, 0.22), transparent 24%),
+        linear-gradient(180deg, #fff8ef 0%, var(--bg) 55%, #f6ecdc 100%);
+      line-height: 1.55;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    img,
+    canvas {
+      display: block;
+      max-width: 100%;
+    }
+
+    .page-shell {
+      width: min(var(--page-width), calc(100% - 28px));
+      margin: 0 auto;
+      padding: 24px 0 48px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: 36px;
+      padding: 28px;
+      background:
+        linear-gradient(125deg, rgba(255, 252, 245, 0.95) 0%, rgba(255, 239, 223, 0.92) 45%, rgba(255, 224, 196, 0.9) 100%);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      isolation: isolate;
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto;
+      border-radius: 50%;
+      filter: blur(12px);
+      opacity: 0.75;
+      z-index: -1;
+    }
+
+    .hero::before {
+      width: 320px;
+      height: 320px;
+      right: -90px;
+      top: -110px;
+      background: radial-gradient(circle, rgba(255, 132, 112, 0.34), transparent 68%);
+    }
+
+    .hero::after {
+      width: 280px;
+      height: 280px;
+      left: -70px;
+      bottom: -90px;
+      background: radial-gradient(circle, rgba(95, 166, 157, 0.28), transparent 70%);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .hero-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 320px;
+      gap: 20px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      width: fit-content;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.66);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      color: var(--accent-mint-deep);
+      font-size: 0.96rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      backdrop-filter: blur(12px);
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-family: var(--header-font);
+      font-size: clamp(2.3rem, 4vw, 4.35rem);
+      line-height: 1.05;
+      letter-spacing: 0.02em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 32rem;
+      font-size: clamp(1rem, 1.5vw, 1.18rem);
+      color: var(--ink-soft);
+    }
+
+    .hero-notes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .hero-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.58);
+      border: 1px solid rgba(255, 255, 255, 0.62);
+      color: var(--ink-soft);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .hero-note strong {
+      color: var(--ink);
+    }
+
+    .hero-visual {
+      display: grid;
+      gap: 18px;
+      align-content: space-between;
+      padding: 20px;
+      border-radius: 30px;
+      background:
+        linear-gradient(160deg, rgba(255, 255, 255, 0.72), rgba(255, 248, 241, 0.52)),
+        linear-gradient(145deg, rgba(255, 194, 174, 0.25), rgba(128, 202, 194, 0.16));
+      border: 1px solid rgba(255, 255, 255, 0.66);
+      backdrop-filter: blur(14px);
+    }
+
+    .visual-bands {
+      display: grid;
+      gap: 12px;
+    }
+
+    .visual-band {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .visual-band span {
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+    }
+
+    .visual-card {
+      display: grid;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.66);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+    }
+
+    .visual-card strong {
+      font-size: 1.08rem;
+      letter-spacing: 0.02em;
+    }
+
+    .visual-card p {
+      font-size: 0.95rem;
+    }
+
+    .app-grid {
+      display: grid;
+      gap: 22px;
+      grid-template-columns: minmax(310px, 0.78fr) minmax(0, 1.22fr);
+    }
+
+    .tabs-shell {
+      display: grid;
+      gap: 22px;
+      margin-top: 22px;
+    }
+
+    .tab-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+    }
+
+    .tab-btn {
+      border: none;
+      min-height: 54px;
+      padding: 0 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink-soft);
+      border: 1px solid rgba(95, 166, 157, 0.14);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+    }
+
+    .tab-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(95, 166, 157, 0.32);
+      color: var(--ink);
+    }
+
+    .tab-btn.is-active {
+      background: linear-gradient(135deg, rgba(255, 127, 96, 0.15), rgba(95, 166, 157, 0.16));
+      border-color: rgba(95, 166, 157, 0.36);
+      color: var(--ink);
+      box-shadow: 0 14px 30px rgba(95, 166, 157, 0.12);
+    }
+
+    .tab-btn strong {
+      display: block;
+      font-size: 1rem;
+      color: inherit;
+    }
+
+    .tab-btn span {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: inherit;
+      opacity: 0.84;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.is-active {
+      display: block;
+      animation: fade-up 0.28s ease both;
+    }
+
+    .single-stack {
+      display: grid;
+      gap: 22px;
+    }
+
+    .left-stack,
+    .right-stack {
+      display: grid;
+      gap: 22px;
+      align-content: start;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      background: var(--surface);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 18px 48px rgba(95, 74, 48, 0.08);
+      backdrop-filter: blur(14px);
+      animation: fade-up 0.55s ease both;
+    }
+
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.28), transparent 28%);
+      pointer-events: none;
+    }
+
+    .panel-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .panel-title-row h2,
+    .panel-title-row h3 {
+      margin: 0;
+      font-family: var(--header-font);
+      font-size: clamp(1.18rem, 2vw, 1.5rem);
+      line-height: 1.16;
+      letter-spacing: 0.01em;
+    }
+
+    .panel-subtitle {
+      margin: 6px 0 0;
+      color: var(--ink-soft);
+      font-size: 0.96rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(95, 166, 157, 0.12);
+      color: var(--accent-mint-deep);
+      font-weight: 800;
+      font-size: 0.92rem;
+      border: 1px solid rgba(95, 166, 157, 0.16);
+      white-space: nowrap;
+    }
+
+    .upload-area {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 24px;
+      border: 1.5px dashed rgba(95, 166, 157, 0.34);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(248, 252, 251, 0.68)),
+        rgba(255, 255, 255, 0.45);
+    }
+
+    .upload-area strong {
+      font-size: 1.08rem;
+    }
+
+    .upload-area p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.95rem;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .field-row label,
+    .field-label {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .field-row small {
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+    }
+
+    .stacked-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .text-input,
+    .select-input,
+    .number-input {
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .text-input:focus,
+    .select-input:focus,
+    .number-input:focus {
+      border-color: rgba(95, 166, 157, 0.55);
+      box-shadow: 0 0 0 4px rgba(95, 166, 157, 0.12);
+      transform: translateY(-1px);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .ghost-btn,
+    .mini-btn {
+      border: none;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 16px;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      transition: transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .primary-btn:hover,
+    .secondary-btn:hover,
+    .ghost-btn:hover,
+    .mini-btn:hover {
+      transform: translateY(-1px);
+      filter: saturate(1.03);
+    }
+
+    .primary-btn:disabled,
+    .secondary-btn:disabled,
+    .ghost-btn:disabled,
+    .mini-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.46;
+      transform: none;
+      filter: none;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--accent) 0%, #ff9a72 100%);
+      color: #fffaf7;
+      box-shadow: 0 14px 28px rgba(255, 127, 96, 0.24);
+    }
+
+    .secondary-btn {
+      background: linear-gradient(135deg, var(--accent-mint) 0%, #7ebdb4 100%);
+      color: #f9fffd;
+      box-shadow: 0 14px 28px rgba(95, 166, 157, 0.22);
+    }
+
+    .ghost-btn {
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      border: 1px solid rgba(95, 166, 157, 0.18);
+    }
+
+    .mini-btn {
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      border: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+
+    .toggle-card-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .toggle-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+    }
+
+    .toggle-card input[type="checkbox"],
+    .toggle-card input[type="radio"] {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--accent-mint);
+      margin: 0;
+      flex: 0 0 auto;
+    }
+
+    .toggle-text {
+      display: grid;
+      gap: 2px;
+    }
+
+    .toggle-text strong {
+      font-size: 0.98rem;
+    }
+
+    .toggle-text span {
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+
+    .settings-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .preview-panel {
+      display: grid;
+      gap: 16px;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .zoom-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: min(100%, 320px);
+    }
+
+    .zoom-wrap input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent-mint);
+    }
+
+    .preview-shell {
+      position: relative;
+      overflow: auto;
+      max-height: 620px;
+      border-radius: 28px;
+      background: #ffffff;
+      background-image:
+        linear-gradient(45deg, rgba(214, 214, 214, 0.46) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(214, 214, 214, 0.46) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(214, 214, 214, 0.46) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(214, 214, 214, 0.46) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+      border: 1px solid rgba(90, 77, 56, 0.15);
+      padding: 16px;
+    }
+
+    .preview-stage {
+      position: relative;
+      display: inline-block;
+      min-width: 100%;
+      min-height: 240px;
+      border-radius: 18px;
+      overflow: hidden;
+      background:
+        linear-gradient(45deg, rgba(232, 232, 232, 0.72) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(232, 232, 232, 0.72) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(232, 232, 232, 0.72) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(232, 232, 232, 0.72) 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    }
+
+    #previewCanvas,
+    #highlightCanvas {
+      position: absolute;
+      inset: 0;
+      image-rendering: pixelated;
+      border-radius: 18px;
+    }
+
+    #previewCanvas {
+      background: transparent;
+      z-index: 1;
+    }
+
+    #highlightCanvas {
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .empty-preview {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 1rem;
+      z-index: 0;
+    }
+
+    .inspector-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .info-card {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+    }
+
+    .info-card h4 {
+      margin: 0;
+      font-family: var(--header-font);
+      font-size: 1.05rem;
+    }
+
+    .info-card p {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+    }
+
+    .swatch-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid rgba(72, 66, 57, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+      flex: 0 0 auto;
+    }
+
+    .swatch.small {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+    }
+
+    .code-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .mono {
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 0.93rem;
+      letter-spacing: 0.01em;
+    }
+
+    .muted {
+      color: var(--ink-soft);
+    }
+
+    .tomodachi-panel {
+      display: grid;
+      gap: 18px;
+    }
+
+    .tomodachi-canvas-wrap {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 26px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 249, 242, 0.78)),
+        rgba(255, 255, 255, 0.55);
+      border: 1px solid var(--line);
+    }
+
+    .canvas-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    #tomodachiPaletteCanvas,
+    #tomodachiHueCanvas {
+      width: 100%;
+      border-radius: 18px;
+      border: 1px solid rgba(72, 66, 57, 0.1);
+    }
+
+    #tomodachiPaletteCanvas {
+      aspect-ratio: 16 / 9;
+    }
+
+    #tomodachiHueCanvas {
+      aspect-ratio: 12 / 1;
+    }
+
+    .simulator-legend {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .simulator-legend-item {
+      display: grid;
+      gap: 6px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+    }
+
+    .simulator-legend-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .simulator-legend-head strong {
+      font-size: 0.96rem;
+    }
+
+    .legend-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid rgba(47, 49, 45, 0.88);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.72);
+      flex: 0 0 auto;
+    }
+
+    .legend-dot.secondary {
+      border-style: dashed;
+      border-color: rgba(51, 124, 115, 0.95);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8);
+    }
+
+    .simulator-legend-item .tiny {
+      line-height: 1.45;
+    }
+
+    .detail-simulator {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid var(--line);
+    }
+
+    .detail-simulator canvas {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid rgba(72, 66, 57, 0.1);
+    }
+
+    .detail-simulator .palette-canvas {
+      aspect-ratio: 16 / 9;
+    }
+
+    .detail-simulator .hue-canvas {
+      aspect-ratio: 12 / 1;
+    }
+
+    .toggle-action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .toggle-action-row .mini-btn.is-active {
+      background: rgba(95, 166, 157, 0.16);
+      border-color: rgba(95, 166, 157, 0.36);
+      color: var(--accent-mint-deep);
+    }
+
+    .guide-box {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(95, 166, 157, 0.1);
+      border: 1px solid rgba(95, 166, 157, 0.16);
+      color: var(--ink);
+    }
+
+    .guide-box strong {
+      font-size: 1rem;
+    }
+
+    .results-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .results-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .top10-strip,
+    .recent-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .color-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.76);
+      border: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .color-chip button {
+      all: unset;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .color-chip .meta {
+      display: grid;
+      min-width: 0;
+    }
+
+    .color-chip .meta strong {
+      font-size: 0.9rem;
+    }
+
+    .color-chip .meta span {
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+    }
+
+    .result-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .result-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .result-card:hover,
+    .result-card.is-active {
+      transform: translateY(-2px);
+      border-color: rgba(95, 166, 157, 0.42);
+      box-shadow: 0 16px 32px rgba(95, 166, 157, 0.12);
+    }
+
+    .result-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .result-card-main {
+      display: flex;
+      gap: 14px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .result-card-main .swatch {
+      width: 60px;
+      height: 60px;
+      border-radius: 20px;
+    }
+
+    .result-card-body {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .result-card-title {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      align-items: center;
+    }
+
+    .result-card-title strong {
+      font-size: 1.12rem;
+      font-family: var(--header-font);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 28px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 127, 96, 0.11);
+      color: var(--accent-deep);
+      font-weight: 800;
+      font-size: 0.82rem;
+    }
+
+    .badge.alt {
+      background: rgba(95, 166, 157, 0.12);
+      color: var(--accent-mint-deep);
+    }
+
+    .badge.gray {
+      background: rgba(92, 96, 87, 0.1);
+      color: var(--ink-soft);
+    }
+
+    .result-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+
+    .meta-box {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(252, 248, 243, 0.9);
+      border: 1px solid rgba(130, 108, 83, 0.08);
+    }
+
+    .meta-box strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--ink);
+    }
+
+    .result-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .empty-state {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px dashed rgba(95, 166, 157, 0.3);
+      background: rgba(255, 255, 255, 0.58);
+      color: var(--ink-soft);
+    }
+
+    .palette-browser-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+
+    .palette-card {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      transition: transform 0.18s ease, border-color 0.18s ease;
+      text-align: left;
+    }
+
+    .palette-card:hover,
+    .palette-card.is-active {
+      transform: translateY(-2px);
+      border-color: rgba(255, 127, 96, 0.38);
+    }
+
+    .palette-card .swatch {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      height: auto;
+      border-radius: 18px;
+    }
+
+    .palette-card strong {
+      font-size: 1.02rem;
+      font-family: var(--header-font);
+    }
+
+    .palette-card span {
+      color: var(--ink-soft);
+      font-size: 0.86rem;
+      word-break: break-all;
+    }
+
+    .detail-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(40, 32, 26, 0.38);
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+      z-index: 40;
+    }
+
+    .detail-overlay.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .detail-drawer {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      bottom: 18px;
+      width: min(460px, calc(100% - 24px));
+      padding: 20px;
+      border-radius: 30px;
+      background: rgba(255, 250, 244, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.74);
+      box-shadow: 0 28px 80px rgba(35, 28, 24, 0.22);
+      transform: translateX(110%);
+      transition: transform 0.28s ease;
+      z-index: 50;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 16px;
+    }
+
+    .detail-drawer.is-open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .drawer-header h3 {
+      margin: 0;
+      font-family: var(--header-font);
+      font-size: 1.48rem;
+    }
+
+    .drawer-content {
+      overflow: auto;
+      padding-right: 6px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .big-swatch {
+      height: 160px;
+      border-radius: 24px;
+      border: 1px solid rgba(72, 66, 57, 0.12);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32);
+    }
+
+    .detail-grid {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-item {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+    }
+
+    .detail-item strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+
+    .detail-item span {
+      display: block;
+      color: var(--ink);
+      word-break: break-word;
+    }
+
+    .candidate-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .candidate-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid var(--line);
+    }
+
+    .candidate-row .rank {
+      min-width: 2rem;
+      font-weight: 900;
+      color: var(--accent-mint-deep);
+    }
+
+    .candidate-row .text {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .candidate-row .text span {
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+
+    .helper-box {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 242, 224, 0.8);
+      border: 1px solid rgba(226, 185, 101, 0.22);
+      color: var(--ink);
+      font-size: 0.95rem;
+    }
+
+    .toast-wrap {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      display: grid;
+      gap: 10px;
+      z-index: 80;
+      pointer-events: none;
+    }
+
+    .toast {
+      min-width: min(92vw, 360px);
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(47, 49, 45, 0.92);
+      color: #fffdf9;
+      box-shadow: 0 18px 40px rgba(20, 16, 12, 0.24);
+      animation: toast-in 0.25s ease forwards;
+    }
+
+    .tiny {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes fade-up {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1120px) {
+      .hero-grid,
+      .app-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-copy {
+        min-height: 0;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100% - 16px, var(--page-width));
+        padding-top: 14px;
+        padding-bottom: 28px;
+      }
+
+      .hero,
+      .panel {
+        padding: 18px;
+        border-radius: 24px;
+      }
+
+      .preview-shell {
+        padding: 10px;
+      }
+
+      .inspector-grid,
+      .detail-grid,
+      .result-meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .palette-browser-grid {
+        grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+      }
+
+      .detail-drawer {
+        left: 8px;
+        right: 8px;
+        top: auto;
+        bottom: 8px;
+        width: auto;
+        max-height: min(84vh, 760px);
+        border-radius: 26px 26px 22px 22px;
+        transform: translateY(110%);
+      }
+
+      .detail-drawer.is-open {
+        transform: translateY(0);
+      }
+    }
+
+    :root {
+      --bg: #FAF8F6;
+      --bg-strong: #F5E9E2;
+      --surface: #FFFDFC;
+      --surface-strong: #FFFDFC;
+      --panel: #FFFDFC;
+      --line: #EFE3DD;
+      --line-strong: #E4D2CB;
+      --ink: #211D1B;
+      --ink-soft: #6E6661;
+      --accent: #E89CA9;
+      --accent-strong: #D98593;
+      --accent-soft: rgba(232, 156, 169, 0.14);
+      --shadow: 0 10px 30px rgba(41, 30, 24, 0.05);
+      --radius-xl: 16px;
+      --radius-lg: 16px;
+      --radius-md: 16px;
+      --radius-sm: 16px;
+      --page-width: 1360px;
+      --header-font: "Inter", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+      --body-font: "Inter", "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    }
+
+    html,
+    body {
+      background: var(--bg);
+    }
+
+    body {
+      color: var(--ink);
+      font-family: var(--body-font);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      background-image: none;
+      line-height: 1.6;
+    }
+
+    .page-shell {
+      width: min(var(--page-width), calc(100% - 32px));
+      padding: 20px 0 40px;
+    }
+
+    .hero {
+      padding: 24px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::before,
+    .hero::after,
+    .panel::before {
+      display: none;
+    }
+
+    .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .hero-copy {
+      min-height: 0;
+      gap: 14px;
+    }
+
+    .hero-visual {
+      display: none;
+    }
+
+    .eyebrow,
+    .hero-note,
+    .pill {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--bg-strong);
+      color: var(--ink-soft);
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    .eyebrow {
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .hero h1 {
+      font-family: var(--header-font);
+      font-size: clamp(2rem, 3.6vw, 2.8rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      max-width: 46rem;
+      font-size: 1rem;
+      color: var(--ink-soft);
+    }
+
+    .hero-notes {
+      gap: 10px;
+      margin-top: 0;
+    }
+
+    .hero-note {
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .tabs-shell,
+    .app-grid,
+    .left-stack,
+    .right-stack,
+    .single-stack,
+    .settings-grid,
+    .form-grid,
+    .preview-panel,
+    .result-list {
+      gap: 24px;
+    }
+
+    .tab-bar {
+      width: fit-content;
+      max-width: 100%;
+      padding: 6px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      animation: none;
+    }
+
+    .tab-btn {
+      min-height: 48px;
+      padding: 0 16px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--ink-soft);
+      box-shadow: none;
+      gap: 10px;
+    }
+
+    .tab-btn:hover {
+      background: rgba(245, 233, 226, 0.65);
+      border-color: var(--line);
+      color: var(--ink);
+      transform: translateY(-1px);
+    }
+
+    .tab-btn.is-active {
+      background: var(--bg-strong);
+      border-color: var(--line-strong);
+      color: var(--ink);
+      box-shadow: none;
+    }
+
+    .tab-btn .swatch.small {
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+    }
+
+    .panel,
+    .upload-area,
+    .toggle-card,
+    .info-card,
+    .result-card,
+    .palette-card,
+    .color-chip,
+    .meta-box,
+    .guide-box,
+    .helper-box,
+    .detail-simulator,
+    .detail-item,
+    .candidate-row,
+    .simulator-legend-item,
+    .visual-card {
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: none;
+    }
+
+    .panel {
+      padding: 24px;
+      overflow: visible;
+      animation-duration: 0.22s;
+    }
+
+    .panel-title-row {
+      margin-bottom: 20px;
+      gap: 16px;
+    }
+
+    .panel-title-row h2,
+    .panel-title-row h3,
+    .info-card h4,
+    .drawer-header h3 {
+      font-family: var(--header-font);
+      letter-spacing: -0.02em;
+    }
+
+    .panel-title-row h2,
+    .panel-title-row h3 {
+      font-size: clamp(1.14rem, 1.8vw, 1.4rem);
+      line-height: 1.2;
+    }
+
+    .panel-subtitle,
+    .toggle-text span,
+    .tiny,
+    .muted,
+    .info-card p,
+    .detail-item strong,
+    .color-chip .meta span,
+    .candidate-row .text span,
+    .meta-box,
+    .empty-state,
+    .helper-box,
+    .guide-box,
+    .canvas-label {
+      color: var(--ink-soft);
+    }
+
+    .pill {
+      min-height: 34px;
+      padding: 8px 14px;
+      color: var(--accent-strong);
+      font-weight: 700;
+      background: rgba(232, 156, 169, 0.08);
+      border-color: rgba(232, 156, 169, 0.24);
+    }
+
+    .upload-area {
+      gap: 16px;
+      padding: 20px;
+      background: linear-gradient(180deg, rgba(245, 233, 226, 0.55), rgba(255, 253, 252, 0.95));
+      border: 1px dashed var(--line-strong);
+    }
+
+    .upload-area strong,
+    .toggle-text strong,
+    .meta-box strong,
+    .result-card-title strong,
+    .palette-card strong {
+      color: var(--ink);
+    }
+
+    .text-input,
+    .select-input,
+    .number-input {
+      min-height: 48px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #FFFFFF;
+      color: var(--ink);
+      box-shadow: none;
+    }
+
+    .text-input:focus,
+    .select-input:focus,
+    .number-input:focus {
+      border-color: rgba(232, 156, 169, 0.52);
+      box-shadow: 0 0 0 4px rgba(232, 156, 169, 0.12);
+      transform: none;
+    }
+
+    .toggle-card {
+      padding: 16px;
+      gap: 12px;
+      box-shadow: none;
+    }
+
+    .toggle-card input[type="checkbox"],
+    .toggle-card input[type="radio"] {
+      accent-color: var(--accent);
+    }
+
+    .button-row,
+    .results-toolbar,
+    .result-actions,
+    .toggle-action-row {
+      gap: 12px;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .ghost-btn,
+    .mini-btn {
+      min-height: 44px;
+      padding: 0 16px;
+      border-radius: 16px;
+      font-weight: 700;
+      letter-spacing: 0;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+      box-shadow: none;
+    }
+
+    .primary-btn {
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid transparent;
+    }
+
+    .secondary-btn {
+      background: rgba(232, 156, 169, 0.1);
+      color: var(--accent-strong);
+      border: 1px solid rgba(232, 156, 169, 0.2);
+    }
+
+    .ghost-btn,
+    .mini-btn {
+      background: #FFFFFF;
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .primary-btn:hover,
+    .secondary-btn:hover,
+    .ghost-btn:hover,
+    .mini-btn:hover {
+      transform: translateY(-1px);
+      filter: none;
+    }
+
+    .primary-btn:hover {
+      background: var(--accent-strong);
+    }
+
+    .secondary-btn:hover {
+      background: rgba(232, 156, 169, 0.16);
+      border-color: rgba(232, 156, 169, 0.3);
+    }
+
+    .ghost-btn:hover,
+    .mini-btn:hover {
+      background: var(--bg-strong);
+      border-color: var(--line-strong);
+    }
+
+    .preview-toolbar {
+      padding: 0;
+      gap: 16px;
+    }
+
+    .preview-shell {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #FFFFFF;
+      background-image:
+        linear-gradient(45deg, rgba(219, 219, 219, 0.42) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(219, 219, 219, 0.42) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(219, 219, 219, 0.42) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(219, 219, 219, 0.42) 75%);
+      background-size: 18px 18px;
+      background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+    }
+
+    .preview-stage {
+      border-radius: 12px;
+      background:
+        linear-gradient(45deg, rgba(236, 236, 236, 0.8) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(236, 236, 236, 0.8) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(236, 236, 236, 0.8) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(236, 236, 236, 0.8) 75%);
+      background-size: 18px 18px;
+      background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+      border: 1px solid var(--line);
+    }
+
+    #previewCanvas,
+    #highlightCanvas,
+    #tomodachiPaletteCanvas,
+    #tomodachiHueCanvas,
+    #paletteTomodachiPaletteCanvas,
+    #paletteTomodachiHueCanvas,
+    .detail-simulator canvas {
+      border-radius: 12px;
+      border: 1px solid var(--line);
+    }
+
+    .empty-preview {
+      padding: 24px;
+      font-size: 0.98rem;
+    }
+
+    .info-card,
+    .guide-box,
+    .helper-box,
+    .detail-simulator,
+    .detail-item,
+    .candidate-row,
+    .simulator-legend-item,
+    .meta-box {
+      box-shadow: none;
+    }
+
+    .guide-box,
+    .helper-box,
+    .meta-box,
+    .toggle-card,
+    .simulator-legend-item {
+      background: rgba(245, 233, 226, 0.38);
+    }
+
+    .tomodachi-canvas-wrap,
+    .detail-simulator {
+      padding: 16px;
+      gap: 16px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+
+    .canvas-label {
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+
+    .simulator-legend {
+      gap: 12px;
+    }
+
+    .simulator-legend-item {
+      padding: 14px;
+    }
+
+    .legend-dot {
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95);
+    }
+
+    .legend-dot.secondary {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95);
+    }
+
+    .palette-simulator-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+      gap: 24px;
+      align-items: start;
+    }
+
+    .palette-simulator-main,
+    .palette-simulator-side {
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .palette-simulator-meta {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(245, 233, 226, 0.38);
+      border: 1px solid var(--line);
+    }
+
+    .palette-simulator-side .simulator-legend {
+      grid-template-columns: 1fr;
+    }
+
+    .palette-guide-box {
+      gap: 14px;
+      min-height: 180px;
+      justify-content: start;
+    }
+
+    .results-header {
+      margin-bottom: 20px;
+    }
+
+    .top10-strip,
+    .recent-strip {
+      gap: 12px;
+    }
+
+    .color-chip {
+      padding: 10px 12px;
+      box-shadow: none;
+    }
+
+    .result-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .result-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 20px;
+      box-shadow: none;
+      transition: border-color 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
+    }
+
+    .result-card:hover,
+    .result-card.is-active,
+    .palette-card:hover,
+    .palette-card.is-active {
+      transform: translateY(-1px);
+      box-shadow: none;
+      border-color: rgba(232, 156, 169, 0.4);
+      background: rgba(245, 233, 226, 0.18);
+    }
+
+    .result-card-main .swatch {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+    }
+
+    .result-card-title {
+      gap: 8px 10px;
+    }
+
+    .result-card-title strong {
+      font-size: 1.04rem;
+      font-family: var(--header-font);
+    }
+
+    .badge {
+      min-height: 26px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(232, 156, 169, 0.1);
+      color: var(--accent-strong);
+      font-size: 0.8rem;
+    }
+
+    .badge.alt {
+      background: rgba(232, 156, 169, 0.16);
+      color: var(--accent-strong);
+    }
+
+    .badge.gray {
+      background: rgba(245, 233, 226, 0.55);
+      color: var(--ink-soft);
+    }
+
+    .result-meta-grid {
+      gap: 12px;
+    }
+
+    .result-actions {
+      margin-top: auto;
+      padding-top: 4px;
+    }
+
+    .palette-browser-grid {
+      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    }
+
+    .palette-card {
+      padding: 14px;
+      gap: 10px;
+      text-align: left;
+      box-shadow: none;
+    }
+
+    .palette-card .swatch {
+      border-radius: 14px;
+    }
+
+    .swatch,
+    .swatch.small,
+    .big-swatch {
+      border-radius: 16px;
+      border: 1px solid rgba(232, 156, 169, 0.18);
+      box-shadow: none;
+    }
+
+    .big-swatch {
+      height: 160px;
+    }
+
+    .detail-overlay {
+      background: rgba(26, 21, 18, 0.18);
+      backdrop-filter: none;
+    }
+
+    .detail-drawer {
+      top: 16px;
+      right: 16px;
+      bottom: 16px;
+      width: min(430px, calc(100% - 24px));
+      padding: 20px;
+      border-radius: 16px;
+      background: #FFFFFF;
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 48px rgba(33, 29, 27, 0.08);
+    }
+
+    .drawer-content {
+      gap: 20px;
+    }
+
+    .detail-grid {
+      gap: 12px;
+    }
+
+    .detail-item {
+      padding: 14px;
+      background: rgba(245, 233, 226, 0.24);
+    }
+
+    .detail-item span {
+      color: var(--ink);
+    }
+
+    .candidate-list {
+      gap: 12px;
+    }
+
+    .candidate-row {
+      padding: 12px;
+      background: #FFFFFF;
+    }
+
+    .candidate-row .rank {
+      color: var(--accent-strong);
+    }
+
+    .toggle-action-row .mini-btn.is-active {
+      background: rgba(232, 156, 169, 0.16);
+      border-color: rgba(232, 156, 169, 0.26);
+      color: var(--accent-strong);
+    }
+
+    .toast {
+      border-radius: 16px;
+      background: #2B2522;
+      box-shadow: 0 14px 30px rgba(43, 37, 34, 0.16);
+    }
+
+    @media (max-width: 1120px) {
+      .page-shell {
+        width: min(var(--page-width), calc(100% - 24px));
+      }
+
+      .tab-bar {
+        width: 100%;
+      }
+
+      .palette-simulator-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100% - 16px, var(--page-width));
+        padding: 16px 0 28px;
+      }
+
+      .hero,
+      .panel,
+      .detail-drawer {
+        border-radius: 16px;
+      }
+
+      .hero,
+      .panel {
+        padding: 20px;
+      }
+
+      .tab-bar {
+        width: 100%;
+      }
+
+      .tab-btn {
+        flex: 1 1 0;
+        justify-content: center;
+      }
+
+      .result-list {
+        grid-template-columns: 1fr;
+      }
+
+      .palette-browser-grid {
+        grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+      }
+
+      .palette-simulator-meta {
+        padding: 14px;
+      }
+
+      .detail-drawer {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: auto;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .panel-title-row,
+      .results-header,
+      .drawer-header,
+      .preview-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .panel-title-row .pill,
+      .results-toolbar,
+      .button-row,
+      .toggle-action-row {
+        width: 100%;
+      }
+
+      .button-row,
+      .results-toolbar {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .button-row > *,
+      .results-toolbar > * {
+        width: 100%;
+      }
+
+      .zoom-wrap {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .result-card-top,
+      .result-card-main {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .result-card-main .swatch {
+        width: 72px;
+        height: 72px;
+      }
+
+      .result-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .result-actions > * {
+        width: 100%;
+      }
+
+      .top10-strip,
+      .recent-strip {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .color-chip {
+        width: 100%;
+      }
+
+      .canvas-label {
+        align-items: flex-start;
+      }
+
+      .canvas-label .tiny {
+        display: block;
+      }
+
+      .detail-drawer {
+        padding: 18px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-shell {
+        width: min(100% - 12px, var(--page-width));
+        padding: 12px 0 22px;
+      }
+
+      .hero,
+      .panel {
+        padding: 16px;
+        border-radius: 16px;
+      }
+
+      .hero-copy {
+        gap: 16px;
+      }
+
+      .hero h1 {
+        font-size: clamp(1.8rem, 9vw, 2.35rem);
+      }
+
+      .hero p {
+        font-size: 0.95rem;
+        max-width: none;
+      }
+
+      .hero-note,
+      .eyebrow {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .tab-bar {
+        padding: 4px;
+        gap: 8px;
+      }
+
+      .tab-btn {
+        flex: 1 1 100%;
+        justify-content: flex-start;
+        min-height: 56px;
+        padding: 12px 14px;
+      }
+
+      .tab-btn .swatch.small {
+        width: 28px;
+        height: 28px;
+      }
+
+      .panel-title-row {
+        margin-bottom: 16px;
+      }
+
+      .upload-area,
+      .tomodachi-canvas-wrap,
+      .detail-simulator,
+      .palette-simulator-meta,
+      .guide-box {
+        padding: 14px;
+      }
+
+      .button-row,
+      .results-toolbar,
+      .result-actions,
+      .top10-strip,
+      .recent-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .button-row,
+      .results-toolbar,
+      .result-actions {
+        display: grid;
+      }
+
+      .preview-shell {
+        padding: 8px;
+        max-height: 58svh;
+      }
+
+      .preview-stage {
+        min-height: 180px;
+      }
+
+      .empty-preview {
+        padding: 18px;
+        font-size: 0.92rem;
+      }
+
+      .canvas-label {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .simulator-legend {
+        grid-template-columns: 1fr;
+      }
+
+      .result-card,
+      .palette-card,
+      .color-chip {
+        padding: 14px;
+      }
+
+      .result-card-title {
+        gap: 6px 8px;
+      }
+
+      .result-card-title strong,
+      .palette-card strong {
+        font-size: 0.98rem;
+      }
+
+      .result-card-main .swatch {
+        width: 60px;
+        height: 60px;
+      }
+
+      .result-meta-grid,
+      .detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .palette-browser-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail-drawer {
+        left: 6px;
+        right: 6px;
+        bottom: 6px;
+        top: auto;
+        width: auto;
+        max-height: min(88svh, 860px);
+        padding: 16px;
+        border-radius: 18px 18px 14px 14px;
+      }
+
+      .drawer-content {
+        padding-right: 0;
+      }
+
+      .big-swatch {
+        height: 132px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div>
+            <span class="eyebrow">Perler / 拼豆 / HEX / 朋友收集</span>
+            <h1>《朋友收集》色盤對照工具</h1>
+            <p>上傳圖片，快速找到圖片用色。適配《朋友收集》的色盤邏輯。內建221 色色卡，幫助抓圖、比色、列出候選色。</p>
+            <div class="hero-notes">
+              <span class="hero-note"><strong id="heroPaletteCount">221</strong> 色已內建</span>
+              <span class="hero-note"><strong>Delta E</strong> 比色預設</span>
+              <span class="hero-note"><strong>朋友收集</strong> 色盤模擬</span>
+            </div>
+          </div>
+          <div class="hero-notes">
+            <span class="hero-note">先上傳圖片，再按「分析圖片」</span>
+            <span class="hero-note">點色卡可直接複製 HEX 與看候選色</span>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="visual-bands">
+            <div class="visual-band" id="heroBandA"></div>
+            <div class="visual-band" id="heroBandB"></div>
+          </div>
+          <div class="visual-card">
+            <strong>這頁的重點不是理論色值，而是降低肉眼判斷壓力。</strong>
+            <p>每次選色都會同時顯示：拼豆色號、HEX、RGB、色差、前 3 名近似候選色，還會用「朋友收集」色盤定位告訴你要把底部色相條與上方大色盤拉到哪裡。</p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="tabs-shell">
+      <nav class="panel tab-bar" aria-label="頁面分頁">
+        <button type="button" class="tab-btn is-active" data-action="switch-tab" data-tab="analyze">
+          <span class="swatch small" style="background: linear-gradient(135deg, #ffb089, #ffd877);"></span>
+          <span>
+            <strong>圖片分析</strong>
+            <span>上傳拼豆圖並找色</span>
+          </span>
+        </button>
+        <button type="button" class="tab-btn" data-action="switch-tab" data-tab="palette">
+          <span class="swatch small" style="background: linear-gradient(135deg, #e9f6d2, #8ad2d0);"></span>
+          <span>
+            <strong>221 色色卡</strong>
+            <span>全部拼豆色參考</span>
+          </span>
+        </button>
+      </nav>
+
+      <section class="tab-panel is-active" id="analyzeTabPanel" data-tab-panel="analyze">
+        <div class="app-grid">
+          <div class="left-stack">
+        <section class="panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>資料輸入區</h2>
+            </div>
+            <span class="pill" id="paletteStatusPill">已載入 221 色</span>
+          </div>
+
+          <div class="upload-area">
+            <strong>上傳拼豆圖案圖片</strong>
+            <p>支援 JPG / PNG。分析前不需要再匯入色卡，圖片中的顏色會直接對應到內建拼豆色號。</p>
+            <input id="imageInput" class="text-input" type="file" accept="image/*">
+            <div class="button-row">
+              <button id="analyzeButton" class="primary-btn" type="button" disabled>分析圖片</button>
+              <button id="resetButton" class="ghost-btn" type="button">重設</button>
+            </div>
+            <div class="tiny" id="imageStatusText">尚未載入圖片，現在可以先瀏覽下方的 221 色色卡。</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>分析設定區</h2>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="field-row">
+              <label for="colorLimitSelect">顏色數量上限</label>
+              <div class="stacked-inline">
+                <select id="colorLimitSelect" class="select-input" aria-label="顏色數量上限">
+                  <option value="8">8 色</option>
+                  <option value="16" selected>16 色</option>
+                  <option value="32">32 色</option>
+                  <option value="custom">自訂</option>
+                </select>
+                <input id="customColorLimitInput" class="number-input" type="number" min="2" max="128" value="16" aria-label="自訂顏色數量">
+              </div>
+              <small>若圖案顏色很多，先用 16 色或 32 色通常最穩。</small>
+            </div>
+
+            <div class="field-row">
+              <label for="distanceMethodSelect">色差演算法</label>
+              <select id="distanceMethodSelect" class="select-input">
+                <option value="deltaE" selected>Delta E 76（較接近人眼）</option>
+                <option value="rgb">RGB 距離（備用）</option>
+              </select>
+            </div>
+
+            <div class="toggle-card-grid">
+              <label class="toggle-card">
+                <input id="ignoreTransparentCheckbox" type="checkbox" checked>
+                <span class="toggle-text">
+                  <strong>忽略透明背景</strong>
+                  <span>適合有透明邊界的 PNG 圖檔。</span>
+                </span>
+              </label>
+
+              <label class="toggle-card">
+                <input id="mergeSimilarCheckbox" type="checkbox" checked>
+                <span class="toggle-text">
+                  <strong>合併相近顏色</strong>
+                  <span>減少取樣噪點造成的顏色碎片化。</span>
+                </span>
+              </label>
+            </div>
+
+            <div class="toggle-card-grid">
+              <label class="toggle-card">
+                <input type="radio" name="matchMode" value="match" checked>
+                <span class="toggle-text">
+                  <strong>自動匹配拼豆色卡</strong>
+                  <span>會直接以最接近的內建拼豆色整理結果。</span>
+                </span>
+              </label>
+              <label class="toggle-card">
+                <input type="radio" name="matchMode" value="raw">
+                <span class="toggle-text">
+                  <strong>僅顯示原始抓色</strong>
+                  <span>保留原始群集顏色，同時附上拼豆候選色。</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>最常用前 10 色</h2>
+              <p class="panel-subtitle">分析後這裡會優先幫你整理使用最多的顏色。</p>
+            </div>
+          </div>
+          <div id="top10Colors" class="top10-strip">
+            <div class="empty-state">還沒有分析結果。上傳圖片後，這裡會列出最常用前 10 色。</div>
+          </div>
+        </section>
+          </div>
+
+          <div class="right-stack">
+        <section class="panel preview-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>圖片預覽區</h2>
+              <p class="panel-subtitle">滑鼠移到圖上可看該點 HEX / RGB，點一下可叫出最近拼豆色與前 3 名候選色。</p>
+            </div>
+            <span class="pill" id="analysisSummaryPill">尚未分析</span>
+          </div>
+
+          <div class="preview-toolbar">
+            <div class="zoom-wrap">
+              <label class="field-label" for="zoomRange">縮放</label>
+              <input id="zoomRange" type="range" min="1" max="500" value="100">
+              <span class="mono" id="zoomLabel">100%</span>
+            </div>
+            <div class="tiny" id="sampleInfoText">目前沒有圖片。</div>
+          </div>
+
+          <div class="preview-shell">
+            <div class="preview-stage" id="previewStage">
+              <canvas id="previewCanvas"></canvas>
+              <canvas id="highlightCanvas"></canvas>
+              <div class="empty-preview" id="emptyPreviewMessage">
+                請先上傳拼豆圖案圖片。<br>
+                載入後可以縮放、移動滑鼠取色，也能點擊像素看最近的拼豆候選色。
+              </div>
+            </div>
+          </div>
+
+          <div class="inspector-grid">
+            <div class="info-card" id="hoverInspector">
+              <h4>滑鼠取色</h4>
+              <p>移到圖片上時，這裡會顯示當前像素的 HEX 與 RGB。</p>
+            </div>
+            <div class="info-card" id="clickInspector">
+              <h4>點擊候選色</h4>
+              <p>點一下圖片後，這裡會顯示最近拼豆色與前 3 名候選色。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel tomodachi-panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>朋友收集色盤模擬區</h2>
+              <p class="panel-subtitle">依你提供的截圖做近似模擬：底部是主色相條，上方是明暗與濃淡大色盤。</p>
+            </div>
+          </div>
+
+          <div class="tomodachi-canvas-wrap">
+            <div class="canvas-label">
+              <span>上方大色盤</span>
+              <span class="tiny">左上偏白，右上偏亮色，左下偏深灰，右下偏深色</span>
+            </div>
+            <canvas id="tomodachiPaletteCanvas" width="640" height="360" aria-label="朋友收集上方大色盤模擬"></canvas>
+
+            <div class="canvas-label">
+              <span>下方主色相條</span>
+              <span class="tiny">紅 → 粉 → 紫 → 藍 → 青 → 綠 → 黃 → 橘紅</span>
+            </div>
+            <canvas id="tomodachiHueCanvas" width="640" height="72" aria-label="朋友收集底部色相條模擬"></canvas>
+
+            <div id="tomodachiLegend" class="simulator-legend"></div>
+          </div>
+
+          <div class="guide-box">
+            <strong id="tomodachiGuideTitle">目前尚未選擇顏色</strong>
+            <span id="tomodachiGuideText">點右側分析結果或下方內建色卡，這裡就會顯示對應的底部色相條位置、上方色盤座標與操作建議。</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="results-header">
+            <div>
+              <h2 style="margin: 0; font-family: var(--header-font);">顏色結果列表區</h2>
+              <p class="panel-subtitle">每張卡都會顯示色塊、拼豆色號、HEX、RGB、比例、色差距離與詳細資訊。</p>
+            </div>
+            <div class="results-toolbar">
+              <button id="exportJsonButton" class="secondary-btn" type="button" disabled>匯出 JSON</button>
+              <button id="exportCsvButton" class="secondary-btn" type="button" disabled>匯出 CSV</button>
+              <button id="exportSwatchesButton" class="ghost-btn" type="button" disabled>匯出色票清單</button>
+            </div>
+          </div>
+
+            <div id="resultsList" class="result-list">
+              <div class="empty-state">分析結果會顯示在這裡。你可以切換原始抓色 / 自動匹配拼豆色卡，並從詳細資訊裡手動修正結果。</div>
+            </div>
+          </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="tab-panel" id="paletteTabPanel" data-tab-panel="palette">
+        <div class="single-stack">
+          <section class="panel tomodachi-panel">
+            <div class="panel-title-row">
+              <div>
+                <h2>朋友收集色盤模擬區</h2>
+              </div>
+              <span class="pill">221 色參考頁</span>
+            </div>
+
+            <div class="palette-simulator-layout">
+              <div class="palette-simulator-main">
+                <div class="tomodachi-canvas-wrap">
+                  <div class="canvas-label">
+                    <span>上方大色盤</span>
+                  </div>
+                  <canvas id="paletteTomodachiPaletteCanvas" width="640" height="360" aria-label="色卡頁朋友收集上方大色盤模擬"></canvas>
+
+                  <div class="canvas-label">
+                    <span>下方主色相條</span>
+                  </div>
+                  <canvas id="paletteTomodachiHueCanvas" width="640" height="72" aria-label="色卡頁朋友收集底部色相條模擬"></canvas>
+                </div>
+              </div>
+
+              <div class="palette-simulator-side">
+                <div class="palette-simulator-meta">
+                  <div class="canvas-label">
+                    <span>色票</span>
+                  </div>
+                  <div id="paletteTomodachiLegend" class="simulator-legend"></div>
+                </div>
+
+                <div class="guide-box palette-guide-box">
+                  <div class="canvas-label">
+                    <span>目前定位</span>
+                  </div>
+                  <strong id="paletteTomodachiGuideTitle">目前尚未選擇顏色</strong>
+                  <span id="paletteTomodachiGuideText">點一下任一拼豆色卡後，這裡會顯示定位資訊。</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>內建 221 色拼豆色卡</h2>
+            </div>
+            <span class="pill" id="paletteCountPill">221 色</span>
+          </div>
+
+          <div class="form-grid">
+            <div class="field-row">
+              <label for="paletteSearchInput">搜尋拼豆色號 / HEX</label>
+              <input id="paletteSearchInput" class="text-input" type="search" placeholder="例如：A1、D13、H7、#b5038d">
+            </div>
+          </div>
+
+          <div style="margin-top: 18px;">
+            <div class="panel-title-row" style="margin-bottom: 12px;">
+              <div>
+                <h3>最近查看顏色</h3>
+                <p class="panel-subtitle">你最近打開過的色票會顯示在這裡。</p>
+              </div>
+            </div>
+            <div id="recentColors" class="recent-strip">
+              <div class="empty-state">目前還沒有最近查看色。點一下任一色票後，這裡會自動記錄。</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px;">
+            <div class="panel-title-row" style="margin-bottom: 12px;">
+              <div>
+                <h3>色卡瀏覽區</h3>
+                <p class="panel-subtitle" id="paletteSearchSummary">顯示全部 221 色。</p>
+              </div>
+            </div>
+            <div id="paletteBrowser" class="palette-browser-grid"></div>
+          </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="detail-overlay" id="detailOverlay"></div>
+  <aside class="detail-drawer" id="detailDrawer" aria-hidden="true">
+    <div class="drawer-header">
+      <div>
+        <h3 id="drawerTitle">顏色詳情</h3>
+        <p class="panel-subtitle" id="drawerSubtitle">點一下結果卡或色卡即可查看完整資訊。</p>
+      </div>
+      <button id="closeDrawerButton" class="ghost-btn" type="button">關閉</button>
+    </div>
+    <div class="drawer-content" id="drawerContent">
+      <div class="empty-state">目前尚未選擇顏色。</div>
+    </div>
+  </aside>
+
+  <div class="toast-wrap" id="toastWrap" aria-live="polite" aria-atomic="true"></div>
+  <datalist id="paletteIdOptions"></datalist>
+
+  <script>
+    // 內建 221 色拼豆色卡，依照使用者提供的兩張色卡圖片逐筆整理。
+    const RAW_PALETTE_GROUPS = {
+      A: [
+        ["1", "faf5cd", [250, 245, 205]], ["2", "fcfed6", [252, 254, 214]], ["3", "fcff92", [252, 255, 146]],
+        ["4", "f7ec5c", [247, 236, 92]], ["5", "f0d83a", [240, 216, 58]], ["6", "fda951", [253, 169, 81]],
+        ["7", "fa8c4f", [250, 140, 79]], ["8", "fbda4d", [251, 218, 77]], ["9", "f79d5f", [247, 157, 95]],
+        ["10", "f47e38", [244, 126, 56]], ["11", "fedb99", [254, 219, 153]], ["12", "fda276", [253, 162, 118]],
+        ["13", "fec667", [254, 198, 103]], ["14", "f75842", [247, 88, 66]], ["15", "fbf65e", [251, 246, 94]],
+        ["16", "feff97", [254, 255, 151]], ["17", "fde173", [253, 225, 115]], ["18", "fcbf80", [252, 191, 128]],
+        ["19", "fd7e77", [253, 126, 119]], ["20", "f9d66e", [249, 214, 110]], ["21", "fae393", [250, 227, 147]],
+        ["22", "edf878", [237, 248, 120]], ["23", "e4c8ba", [228, 200, 186]], ["24", "f3f6a9", [243, 246, 169]],
+        ["25", "ffd785", [255, 215, 133]], ["26", "ffc734", [255, 199, 52]]
+      ],
+      B: [
+        ["1", "dff13b", [223, 241, 59]], ["2", "64f343", [100, 243, 67]], ["3", "a1f586", [161, 245, 134]],
+        ["4", "5fdf34", [95, 223, 52]], ["5", "39e158", [57, 225, 88]], ["6", "64e0a4", [100, 224, 164]],
+        ["7", "3eae7c", [62, 174, 124]], ["8", "1d9b54", [29, 155, 84]], ["9", "2a5037", [42, 80, 55]],
+        ["10", "9ad1ba", [154, 209, 186]], ["11", "627032", [98, 112, 50]], ["12", "1a6e3d", [26, 110, 61]],
+        ["13", "c8e87d", [200, 232, 125]], ["14", "abe84f", [171, 232, 79]], ["15", "305335", [48, 83, 53]],
+        ["16", "c0ed9c", [192, 237, 156]], ["17", "9eb33e", [158, 179, 62]], ["18", "e6ed4f", [230, 237, 79]],
+        ["19", "26b78e", [38, 183, 142]], ["20", "cbeccf", [203, 236, 207]], ["21", "18616a", [24, 97, 106]],
+        ["22", "0a4241", [10, 66, 65]], ["23", "343b1a", [52, 59, 26]], ["24", "e8faa6", [232, 250, 166]],
+        ["25", "4e846d", [78, 132, 109]], ["26", "907c35", [144, 124, 53]], ["27", "d0e0af", [208, 224, 175]],
+        ["28", "9ee5bb", [158, 229, 187]], ["29", "c6df5f", [198, 223, 95]], ["30", "e3fbb1", [227, 251, 177]],
+        ["31", "b4e691", [180, 230, 145]], ["32", "92ad60", [146, 173, 96]]
+      ],
+      C: [
+        ["1", "f0fee4", [240, 254, 228]], ["2", "abf0fe", [171, 240, 254]], ["3", "a2e0f7", [162, 224, 247]],
+        ["4", "44cdfb", [68, 205, 251]], ["5", "06aadf", [6, 170, 223]], ["6", "54a7e9", [84, 167, 233]],
+        ["7", "3977ca", [57, 119, 202]], ["8", "0f52bd", [15, 82, 189]], ["9", "3349c3", [51, 73, 195]],
+        ["10", "3cbce3", [60, 188, 227]], ["11", "2aded3", [42, 222, 211]], ["12", "1e334e", [30, 51, 78]],
+        ["13", "cde7fe", [205, 231, 254]], ["14", "d5fcf7", [213, 252, 247]], ["15", "21c5c4", [33, 197, 196]],
+        ["16", "1858a2", [24, 88, 162]], ["17", "02d1f3", [2, 209, 243]], ["18", "213244", [33, 50, 68]],
+        ["19", "18869d", [24, 134, 157]], ["20", "1a70a9", [26, 112, 169]], ["21", "bcddfc", [188, 221, 252]],
+        ["22", "6bb1bb", [107, 177, 187]], ["23", "c8e2fd", [200, 226, 253]], ["24", "7ec5f9", [126, 197, 249]],
+        ["25", "a9e8e0", [169, 232, 224]], ["26", "42adcf", [66, 173, 207]], ["27", "d0def9", [208, 222, 249]],
+        ["28", "bdcee8", [189, 206, 232]], ["29", "364a89", [54, 74, 137]]
+      ],
+      D: [
+        ["1", "acb7ef", [172, 183, 239]], ["2", "868dd3", [134, 141, 211]], ["3", "3554af", [53, 84, 175]],
+        ["4", "162d7b", [22, 45, 123]], ["5", "b34ec6", [179, 78, 198]], ["6", "b37bdc", [179, 123, 220]],
+        ["7", "8758a9", [135, 88, 169]], ["8", "e3d2fe", [227, 210, 254]], ["9", "d5b9f4", [213, 185, 244]],
+        ["10", "301a49", [48, 26, 73]], ["11", "beb9e2", [190, 185, 226]], ["12", "dc99ce", [220, 153, 206]],
+        ["13", "b5038d", [181, 3, 141]], ["14", "862993", [134, 41, 147]], ["15", "2f1f8c", [47, 31, 140]],
+        ["16", "e2e4f0", [226, 228, 240]], ["17", "c7d3f9", [199, 211, 249]], ["18", "9a64b8", [154, 100, 184]],
+        ["19", "d8c2d9", [216, 194, 217]], ["20", "9a35ad", [154, 53, 173]], ["21", "940595", [148, 5, 149]],
+        ["22", "38389a", [56, 56, 154]], ["23", "eadbf8", [234, 219, 248]], ["24", "768ae1", [118, 138, 225]],
+        ["25", "4950c2", [73, 80, 194]], ["26", "d6c6eb", [214, 198, 235]]
+      ],
+      E: [
+        ["1", "f6d4cb", [246, 212, 203]], ["2", "fcc1dd", [252, 193, 221]], ["3", "f6bde8", [246, 189, 232]],
+        ["4", "e8649e", [232, 100, 158]], ["5", "f0569f", [240, 86, 159]], ["6", "eb4172", [235, 65, 114]],
+        ["7", "c53674", [197, 54, 116]], ["8", "fddbe9", [253, 219, 233]], ["9", "e376c7", [227, 118, 199]],
+        ["10", "d13b95", [209, 59, 149]], ["11", "f7dad4", [247, 218, 212]], ["12", "f693bf", [246, 147, 191]],
+        ["13", "b5026a", [181, 2, 106]], ["14", "fad4bf", [250, 212, 191]], ["15", "f5c9ca", [245, 201, 202]],
+        ["16", "fbf4ec", [251, 244, 236]], ["17", "f7e3ec", [247, 227, 236]], ["18", "f9c8db", [249, 200, 219]],
+        ["19", "f6bbd1", [246, 187, 209]], ["20", "d7c6ce", [215, 198, 206]], ["21", "c09da4", [192, 157, 164]],
+        ["22", "b38c9f", [179, 140, 159]], ["23", "937d8a", [147, 125, 138]], ["24", "debee5", [222, 190, 229]]
+      ],
+      F: [
+        ["1", "fe9381", [254, 147, 129]], ["2", "f63d4b", [246, 61, 75]], ["3", "ee4e3e", [238, 78, 62]],
+        ["4", "fb2a40", [251, 42, 64]], ["5", "e10328", [225, 3, 40]], ["6", "913635", [145, 54, 53]],
+        ["7", "911932", [145, 25, 50]], ["8", "bb0126", [187, 1, 38]], ["9", "e0677a", [224, 103, 122]],
+        ["10", "874628", [135, 70, 40]], ["11", "592323", [89, 35, 35]], ["12", "f3536b", [243, 83, 107]],
+        ["13", "f45c45", [244, 92, 69]], ["14", "fcadb2", [252, 173, 178]], ["15", "d50527", [213, 5, 39]],
+        ["16", "f8c0a9", [248, 192, 169]], ["17", "e89b7d", [232, 155, 125]], ["18", "d07f4a", [208, 127, 74]],
+        ["19", "be454a", [190, 69, 74]], ["20", "c69495", [198, 148, 149]], ["21", "f2b8c6", [242, 184, 198]],
+        ["22", "f7c3d0", [247, 195, 208]], ["23", "ed806c", [237, 128, 108]], ["24", "e09daf", [224, 157, 175]],
+        ["25", "e84854", [232, 72, 84]]
+      ],
+      G: [
+        ["1", "ffe4d3", [255, 228, 211]], ["2", "fcc6ac", [252, 198, 172]], ["3", "f1c4a5", [241, 196, 165]],
+        ["4", "dcb387", [220, 179, 135]], ["5", "e7b34e", [231, 179, 78]], ["6", "e3a014", [227, 160, 20]],
+        ["7", "985c3a", [152, 92, 58]], ["8", "713d2f", [113, 61, 47]], ["9", "e4b685", [228, 182, 133]],
+        ["10", "da8c42", [218, 140, 66]], ["11", "dac898", [218, 200, 152]], ["12", "fec993", [254, 201, 147]],
+        ["13", "b2714b", [178, 113, 75]], ["14", "8b684c", [139, 104, 76]], ["15", "f6f8e3", [246, 248, 227]],
+        ["16", "f2d8c1", [242, 216, 193]], ["17", "77544e", [119, 84, 78]], ["18", "ffe3d5", [255, 227, 213]],
+        ["19", "dd7d41", [221, 125, 65]], ["20", "a5452f", [165, 69, 47]], ["21", "b38561", [179, 133, 97]]
+      ],
+      H: [
+        ["1", "ffffff", [255, 255, 255]], ["2", "fbfbfb", [251, 251, 251]], ["3", "b4b4b4", [180, 180, 180]],
+        ["4", "878787", [135, 135, 135]], ["5", "464648", [70, 70, 72]], ["6", "2c2c2c", [44, 44, 44]],
+        ["7", "010101", [1, 1, 1]], ["8", "e7d6dc", [231, 214, 220]], ["9", "efedee", [239, 237, 238]],
+        ["10", "ebebeb", [235, 235, 235]], ["11", "cdcdcd", [205, 205, 205]], ["12", "fdf6ee", [253, 246, 238]],
+        ["13", "f4efd1", [244, 239, 209]], ["14", "ced7d4", [206, 215, 212]], ["15", "9aa6a6", [154, 166, 166]],
+        ["16", "1b1213", [27, 18, 19]], ["17", "f0eeef", [240, 238, 239]], ["18", "fcfff6", [252, 255, 246]],
+        ["19", "f2eee5", [242, 238, 229]], ["20", "96a09f", [150, 160, 159]], ["21", "f8fbe6", [248, 251, 230]],
+        ["22", "cacad2", [202, 202, 210]], ["23", "9b9c94", [155, 156, 148]]
+      ],
+      M: [
+        ["1", "bbc6b6", [187, 198, 182]], ["2", "909994", [144, 153, 148]], ["3", "697e81", [105, 126, 129]],
+        ["4", "e0d4bc", [224, 212, 188]], ["5", "d1ccaf", [209, 204, 175]], ["6", "b0aa86", [176, 170, 134]],
+        ["7", "b0a796", [176, 167, 150]], ["8", "ae8082", [174, 128, 130]], ["9", "a68862", [166, 136, 98]],
+        ["10", "c4b3bb", [196, 179, 187]], ["11", "9d7693", [157, 118, 147]], ["12", "644b51", [100, 75, 81]],
+        ["13", "c79266", [199, 146, 102]], ["14", "c27563", [194, 117, 99]], ["15", "747d7a", [116, 125, 122]]
+      ]
+    };
+
+    const BUILTIN_PALETTE = Object.entries(RAW_PALETTE_GROUPS)
+      .flatMap(([group, entries]) =>
+        entries.map(([num, hex, rgb]) => ({
+          id: `${group}${num}`,
+          name: `${group}${num}`,
+          hex: `#${hex.toLowerCase()}`,
+          rgb: [...rgb]
+        }))
+      )
+      .sort((a, b) => {
+        const [groupA, numA] = [a.id[0], parseInt(a.id.slice(1), 10)];
+        const [groupB, numB] = [b.id[0], parseInt(b.id.slice(1), 10)];
+        return groupA.localeCompare(groupB) || numA - numB;
+      });
+
+    const paletteById = Object.fromEntries(BUILTIN_PALETTE.map((item) => [item.id, item]));
+    const STORAGE_KEY = "perler-hex-tool:v1";
+    const MAX_RECENT = 10;
+    const DEFAULT_SETTINGS = {
+      colorLimitMode: "16",
+      customColorLimit: 16,
+      ignoreTransparent: true,
+      mergeSimilar: true,
+      mode: "match",
+      distanceMethod: "deltaE",
+      zoom: 1
+    };
+
+    const state = {
+      settings: { ...DEFAULT_SETTINGS },
+      activeTab: "analyze",
+      paletteSearch: "",
+      recentViews: [],
+      imageDataUrl: "",
+      imageName: "",
+      sourceImage: null,
+      sourceCanvas: document.createElement("canvas"),
+      analysis: null,
+      hoverPixel: null,
+      clickedPixel: null,
+      manualOverrides: {},
+      detail: null,
+      activeResultKey: null,
+      simulatorFocus: null
+    };
+
+    const els = {
+      heroPaletteCount: document.getElementById("heroPaletteCount"),
+      paletteStatusPill: document.getElementById("paletteStatusPill"),
+      paletteCountPill: document.getElementById("paletteCountPill"),
+      tabButtons: Array.from(document.querySelectorAll("[data-action='switch-tab']")),
+      analyzeTabPanel: document.getElementById("analyzeTabPanel"),
+      paletteTabPanel: document.getElementById("paletteTabPanel"),
+      imageInput: document.getElementById("imageInput"),
+      analyzeButton: document.getElementById("analyzeButton"),
+      resetButton: document.getElementById("resetButton"),
+      imageStatusText: document.getElementById("imageStatusText"),
+      colorLimitSelect: document.getElementById("colorLimitSelect"),
+      customColorLimitInput: document.getElementById("customColorLimitInput"),
+      distanceMethodSelect: document.getElementById("distanceMethodSelect"),
+      ignoreTransparentCheckbox: document.getElementById("ignoreTransparentCheckbox"),
+      mergeSimilarCheckbox: document.getElementById("mergeSimilarCheckbox"),
+      zoomRange: document.getElementById("zoomRange"),
+      zoomLabel: document.getElementById("zoomLabel"),
+      sampleInfoText: document.getElementById("sampleInfoText"),
+      previewStage: document.getElementById("previewStage"),
+      previewCanvas: document.getElementById("previewCanvas"),
+      previewCtx: document.getElementById("previewCanvas").getContext("2d"),
+      highlightCanvas: document.getElementById("highlightCanvas"),
+      highlightCtx: document.getElementById("highlightCanvas").getContext("2d"),
+      emptyPreviewMessage: document.getElementById("emptyPreviewMessage"),
+      hoverInspector: document.getElementById("hoverInspector"),
+      clickInspector: document.getElementById("clickInspector"),
+      analysisSummaryPill: document.getElementById("analysisSummaryPill"),
+      top10Colors: document.getElementById("top10Colors"),
+      resultsList: document.getElementById("resultsList"),
+      exportJsonButton: document.getElementById("exportJsonButton"),
+      exportCsvButton: document.getElementById("exportCsvButton"),
+      exportSwatchesButton: document.getElementById("exportSwatchesButton"),
+      paletteSearchInput: document.getElementById("paletteSearchInput"),
+      paletteSearchSummary: document.getElementById("paletteSearchSummary"),
+      paletteBrowser: document.getElementById("paletteBrowser"),
+      recentColors: document.getElementById("recentColors"),
+      detailOverlay: document.getElementById("detailOverlay"),
+      detailDrawer: document.getElementById("detailDrawer"),
+      drawerTitle: document.getElementById("drawerTitle"),
+      drawerSubtitle: document.getElementById("drawerSubtitle"),
+      drawerContent: document.getElementById("drawerContent"),
+      closeDrawerButton: document.getElementById("closeDrawerButton"),
+      toastWrap: document.getElementById("toastWrap"),
+      analysisModeRadios: Array.from(document.querySelectorAll('input[name="matchMode"]')),
+      tomodachiPaletteCanvas: document.getElementById("tomodachiPaletteCanvas"),
+      tomodachiHueCanvas: document.getElementById("tomodachiHueCanvas"),
+      tomodachiLegend: document.getElementById("tomodachiLegend"),
+      tomodachiGuideTitle: document.getElementById("tomodachiGuideTitle"),
+      tomodachiGuideText: document.getElementById("tomodachiGuideText"),
+      paletteTomodachiPaletteCanvas: document.getElementById("paletteTomodachiPaletteCanvas"),
+      paletteTomodachiHueCanvas: document.getElementById("paletteTomodachiHueCanvas"),
+      paletteTomodachiLegend: document.getElementById("paletteTomodachiLegend"),
+      paletteTomodachiGuideTitle: document.getElementById("paletteTomodachiGuideTitle"),
+      paletteTomodachiGuideText: document.getElementById("paletteTomodachiGuideText"),
+      paletteIdOptions: document.getElementById("paletteIdOptions"),
+      heroBandA: document.getElementById("heroBandA"),
+      heroBandB: document.getElementById("heroBandB")
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function round(value, digits = 1) {
+      const factor = 10 ** digits;
+      return Math.round(value * factor) / factor;
+    }
+
+    function hexToRgb(hex) {
+      const normalized = String(hex).trim().replace(/^#/, "");
+      const expanded = normalized.length === 3
+        ? normalized.split("").map((char) => char + char).join("")
+        : normalized;
+      const safeHex = expanded.padEnd(6, "0").slice(0, 6);
+      return {
+        r: parseInt(safeHex.slice(0, 2), 16),
+        g: parseInt(safeHex.slice(2, 4), 16),
+        b: parseInt(safeHex.slice(4, 6), 16)
+      };
+    }
+
+    function normalizeColorInput(color) {
+      if (!color) {
+        return { r: 0, g: 0, b: 0 };
+      }
+      if (typeof color === "string") {
+        return hexToRgb(color);
+      }
+      if (Array.isArray(color)) {
+        return {
+          r: clamp(Math.round(color[0] ?? 0), 0, 255),
+          g: clamp(Math.round(color[1] ?? 0), 0, 255),
+          b: clamp(Math.round(color[2] ?? 0), 0, 255)
+        };
+      }
+      if (Array.isArray(color.rgb)) {
+        return normalizeColorInput(color.rgb);
+      }
+      return {
+        r: clamp(Math.round(color.r ?? 0), 0, 255),
+        g: clamp(Math.round(color.g ?? 0), 0, 255),
+        b: clamp(Math.round(color.b ?? 0), 0, 255)
+      };
+    }
+
+    function rgbToHex(r, g, b) {
+      const { r: rr, g: gg, b: bb } = normalizeColorInput(
+        typeof r === "object" ? r : [r, g, b]
+      );
+      return `#${[rr, gg, bb].map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+    }
+
+    function rgbToHsl(r, g, b) {
+      const { r: rr, g: gg, b: bb } = normalizeColorInput(typeof r === "object" ? r : [r, g, b]);
+      const rn = rr / 255;
+      const gn = gg / 255;
+      const bn = bb / 255;
+      const max = Math.max(rn, gn, bn);
+      const min = Math.min(rn, gn, bn);
+      const delta = max - min;
+      let h = 0;
+      const l = (max + min) / 2;
+      const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+      if (delta !== 0) {
+        if (max === rn) {
+          h = ((gn - bn) / delta) % 6;
+        } else if (max === gn) {
+          h = (bn - rn) / delta + 2;
+        } else {
+          h = (rn - gn) / delta + 4;
+        }
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+      }
+
+      return {
+        h,
+        s: round(s * 100, 1),
+        l: round(l * 100, 1)
+      };
+    }
+
+    function rgbToHsv(r, g, b) {
+      const { r: rr, g: gg, b: bb } = normalizeColorInput(typeof r === "object" ? r : [r, g, b]);
+      const rn = rr / 255;
+      const gn = gg / 255;
+      const bn = bb / 255;
+      const max = Math.max(rn, gn, bn);
+      const min = Math.min(rn, gn, bn);
+      const delta = max - min;
+      let h = 0;
+      const s = max === 0 ? 0 : delta / max;
+      const v = max;
+
+      if (delta !== 0) {
+        if (max === rn) {
+          h = ((gn - bn) / delta) % 6;
+        } else if (max === gn) {
+          h = (bn - rn) / delta + 2;
+        } else {
+          h = (rn - gn) / delta + 4;
+        }
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+      }
+
+      return {
+        h,
+        s: round(s * 100, 1),
+        v: round(v * 100, 1)
+      };
+    }
+
+    function hsvToRgb(h, s, v) {
+      const hue = ((h % 360) + 360) % 360;
+      const sat = clamp(s, 0, 1);
+      const val = clamp(v, 0, 1);
+      const c = val * sat;
+      const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+      const m = val - c;
+      let r1 = 0;
+      let g1 = 0;
+      let b1 = 0;
+
+      if (hue < 60) [r1, g1, b1] = [c, x, 0];
+      else if (hue < 120) [r1, g1, b1] = [x, c, 0];
+      else if (hue < 180) [r1, g1, b1] = [0, c, x];
+      else if (hue < 240) [r1, g1, b1] = [0, x, c];
+      else if (hue < 300) [r1, g1, b1] = [x, 0, c];
+      else [r1, g1, b1] = [c, 0, x];
+
+      return {
+        r: Math.round((r1 + m) * 255),
+        g: Math.round((g1 + m) * 255),
+        b: Math.round((b1 + m) * 255)
+      };
+    }
+
+    function rgbToXyz(r, g, b) {
+      const { r: rr, g: gg, b: bb } = normalizeColorInput(typeof r === "object" ? r : [r, g, b]);
+      const transform = (channel) => {
+        const normalized = channel / 255;
+        return normalized > 0.04045
+          ? ((normalized + 0.055) / 1.055) ** 2.4
+          : normalized / 12.92;
+      };
+
+      const rn = transform(rr);
+      const gn = transform(gg);
+      const bn = transform(bb);
+
+      return {
+        x: (rn * 0.4124 + gn * 0.3576 + bn * 0.1805) * 100,
+        y: (rn * 0.2126 + gn * 0.7152 + bn * 0.0722) * 100,
+        z: (rn * 0.0193 + gn * 0.1192 + bn * 0.9505) * 100
+      };
+    }
+
+    function xyzToLab(x, y, z) {
+      const refX = 95.047;
+      const refY = 100.0;
+      const refZ = 108.883;
+
+      const pivot = (value) =>
+        value > 0.008856 ? value ** (1 / 3) : (7.787 * value) + (16 / 116);
+
+      const fx = pivot(x / refX);
+      const fy = pivot(y / refY);
+      const fz = pivot(z / refZ);
+
+      return {
+        l: (116 * fy) - 16,
+        a: 500 * (fx - fy),
+        b: 200 * (fy - fz)
+      };
+    }
+
+    function rgbToLab(r, g, b) {
+      const { x, y, z } = rgbToXyz(r, g, b);
+      return xyzToLab(x, y, z);
+    }
+
+    function deltaE76(labA, labB) {
+      return Math.sqrt(
+        (labA.l - labB.l) ** 2 +
+        (labA.a - labB.a) ** 2 +
+        (labA.b - labB.b) ** 2
+      );
+    }
+
+    function rgbDistance(colorA, colorB) {
+      const a = normalizeColorInput(colorA);
+      const b = normalizeColorInput(colorB);
+      return Math.sqrt(
+        (a.r - b.r) ** 2 +
+        (a.g - b.g) ** 2 +
+        (a.b - b.b) ** 2
+      );
+    }
+
+    function colorDistance(colorA, colorB, method = state.settings.distanceMethod) {
+      if (method === "rgb") {
+        return rgbDistance(colorA, colorB);
+      }
+      const a = normalizeColorInput(colorA);
+      const b = normalizeColorInput(colorB);
+      return deltaE76(rgbToLab(a), rgbToLab(b));
+    }
+
+    function findNearestPaletteColor(color, method = state.settings.distanceMethod) {
+      const normalized = normalizeColorInput(color);
+      let best = null;
+      let bestDistance = Number.POSITIVE_INFINITY;
+
+      for (const entry of BUILTIN_PALETTE) {
+        const distance = colorDistance(normalized, entry.rgb, method);
+        if (distance < bestDistance) {
+          best = entry;
+          bestDistance = distance;
+        }
+      }
+
+      return best ? { ...best, distance: round(bestDistance, 2) } : null;
+    }
+
+    function findTopNearestPaletteColors(color, limit = 3, method = state.settings.distanceMethod) {
+      const normalized = normalizeColorInput(color);
+      return BUILTIN_PALETTE
+        .map((entry) => ({
+          ...entry,
+          distance: round(colorDistance(normalized, entry.rgb, method), 2)
+        }))
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, limit);
+    }
+
+    function getHueLabel(hue, saturation = 100, lightness = 50) {
+      if (saturation < 12) {
+        if (lightness > 86) return "米白";
+        if (lightness < 18) return "近黑灰";
+        return "灰色";
+      }
+
+      if (hue < 18 || hue >= 345) return "紅色";
+      if (hue < 42) return "橘紅";
+      if (hue < 58) return "橘色";
+      if (hue < 75) return "黃色";
+      if (hue < 105) return "黃綠";
+      if (hue < 150) return "綠色";
+      if (hue < 185) return "青綠";
+      if (hue < 220) return "青藍";
+      if (hue < 255) return "藍色";
+      if (hue < 290) return "紫色";
+      if (hue < 320) return "粉紫";
+      return "粉紅";
+    }
+
+    function describeHexPosition(color) {
+      const rgb = normalizeColorInput(color);
+      const hsv = rgbToHsv(rgb);
+      const hsl = rgbToHsl(rgb);
+      const hueLabel = getHueLabel(hsv.h, hsv.s, hsl.l);
+
+      const xPhrase = hsv.s < 14 ? "偏左" : hsv.s < 38 ? "中間偏左" : hsv.s < 68 ? "中間偏右" : "偏右";
+      const yPhrase = hsv.v > 82 ? "偏上" : hsv.v > 58 ? "中間" : hsv.v > 30 ? "偏下" : "接近下方";
+      const saturationPhrase = hsv.s < 12 ? "低飽和、偏灰" : hsv.s < 38 ? "柔和、帶一點灰感" : hsv.s < 72 ? "顏色感明顯" : "高飽和、很有色感";
+      const brightnessPhrase = hsv.v > 84 ? "整體偏亮" : hsv.v > 60 ? "亮度中上" : hsv.v > 34 ? "亮度中低" : "整體偏暗";
+
+      let toneHint = `${xPhrase}${yPhrase}的${hueLabel}區`;
+
+      if (hsv.s < 10 && hsv.v > 88) {
+        toneHint = "接近左上角的低飽和米白色區";
+      } else if (hsv.s < 12 && hsv.v < 20) {
+        toneHint = "接近左下角的深灰近黑區";
+      } else if (hsv.s < 18 && hsv.v > 50 && hsv.v < 82) {
+        toneHint = `中間偏左的灰調${hueLabel}區`;
+      }
+
+      return `這色大約在${toneHint}，屬於${brightnessPhrase}、${saturationPhrase}的${hueLabel}。`;
+    }
+
+    function getTomodachiSliderHuePercent(hue) {
+      return ((360 - hue) % 360) / 360;
+    }
+
+    function getHueBandLabelBySliderPercent(percent) {
+      if (percent < 0.06 || percent >= 0.95) return "紅區";
+      if (percent < 0.15) return "粉紅區";
+      if (percent < 0.28) return "粉紫區";
+      if (percent < 0.45) return "藍區";
+      if (percent < 0.57) return "青區";
+      if (percent < 0.73) return "綠區";
+      if (percent < 0.89) return "黃區";
+      return "橘紅區";
+    }
+
+    function mapColorToTomodachiPalette(color) {
+      const rgb = normalizeColorInput(color);
+      const hsv = rgbToHsv(rgb);
+      const hsl = rgbToHsl(rgb);
+      const hueSliderX = round(getTomodachiSliderHuePercent(hsv.h) * 100, 1);
+      const paletteX = round(clamp((hsv.s * 0.78) + (hsl.s * 0.22), 0, 100), 1);
+      const paletteY = round(clamp(100 - ((hsv.v * 0.68) + (hsl.l * 0.32)), 0, 100), 1);
+      const hueBandLabel = getHueBandLabelBySliderPercent(hueSliderX / 100);
+
+      const horizontal = paletteX < 22 ? "偏左" : paletteX < 42 ? "中間偏左" : paletteX < 62 ? "中間" : paletteX < 80 ? "中間偏右" : "偏右";
+      const vertical = paletteY < 18 ? "偏上" : paletteY < 38 ? "上方偏中" : paletteY < 62 ? "中間" : paletteY < 82 ? "下方偏中" : "偏下";
+      const guidance = `先將底部滑桿調到 ${Math.round(hueSliderX)}% 左右的${hueBandLabel}，再到上方色盤 ${Math.round(paletteX)}%, ${Math.round(paletteY)}% 的位置找色，大約是${horizontal}、${vertical}。`;
+
+      return {
+        hueSliderX,
+        paletteX,
+        paletteY,
+        hueBandLabel,
+        guidance
+      };
+    }
+
+    function describeTomodachiPalettePosition(color) {
+      const mapped = mapColorToTomodachiPalette(color);
+      const saturationComment = mapped.paletteX < 18 ? "這色偏灰、偏淡" :
+        mapped.paletteX < 45 ? "這色帶一點色相但不會太刺眼" :
+        mapped.paletteX < 72 ? "這色的主色相感已經很明顯" :
+        "這色屬於很有色感的濃色區";
+
+      const brightnessComment = mapped.paletteY < 18 ? "位置偏上，所以會比較亮" :
+        mapped.paletteY < 48 ? "位置偏中上，亮度還算充足" :
+        mapped.paletteY < 78 ? "位置偏中下，已經開始變暗" :
+        "位置偏下，所以是比較深、比較暗的版本";
+
+      return `${mapped.guidance} ${saturationComment}，${brightnessComment}。`;
+    }
+
+    function weightedAverageRgb(items) {
+      let sumR = 0;
+      let sumG = 0;
+      let sumB = 0;
+      let total = 0;
+      items.forEach((item) => {
+        const rgb = normalizeColorInput(item.rgb ?? item.rawRgb ?? item);
+        const weight = item.count ?? item.weight ?? 1;
+        sumR += rgb.r * weight;
+        sumG += rgb.g * weight;
+        sumB += rgb.b * weight;
+        total += weight;
+      });
+      if (total === 0) return { r: 0, g: 0, b: 0 };
+      return {
+        r: Math.round(sumR / total),
+        g: Math.round(sumG / total),
+        b: Math.round(sumB / total)
+      };
+    }
+
+    function createPreviewDataUrl(image) {
+      const previewCanvas = document.createElement("canvas");
+      const maxSide = 1200;
+      const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
+      previewCanvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+      previewCanvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+      const ctx = previewCanvas.getContext("2d");
+      ctx.drawImage(image, 0, 0, previewCanvas.width, previewCanvas.height);
+      return previewCanvas.toDataURL("image/png");
+    }
+
+    function getCurrentColorLimit() {
+      const mode = state.settings.colorLimitMode;
+      if (mode === "custom") {
+        return clamp(parseInt(state.settings.customColorLimit, 10) || 16, 2, 128);
+      }
+      return clamp(parseInt(mode, 10) || 16, 2, 128);
+    }
+
+    function getDistanceThreshold(method, mergeSimilar) {
+      if (method === "rgb") {
+        return mergeSimilar ? 34 : 22;
+      }
+      return mergeSimilar ? 12 : 7.5;
+    }
+
+    function getBucketStep(mergeSimilar) {
+      return mergeSimilar ? 18 : 12;
+    }
+
+    function buildBucketKey(r, g, b, step) {
+      const qr = clamp(Math.round(r / step) * step, 0, 255);
+      const qg = clamp(Math.round(g / step) * step, 0, 255);
+      const qb = clamp(Math.round(b / step) * step, 0, 255);
+      return `${qr}-${qg}-${qb}`;
+    }
+
+    function extractDominantColors(imageData, settings) {
+      const { data, width, height } = imageData;
+      const bucketStep = getBucketStep(settings.mergeSimilar);
+      const mergeThreshold = getDistanceThreshold(settings.distanceMethod, settings.mergeSimilar);
+      const totalPixels = width * height;
+      const buckets = new Map();
+      let sampledPixelCount = 0;
+
+      for (let index = 0; index < totalPixels; index += 1) {
+        const offset = index * 4;
+        const alpha = data[offset + 3];
+        if (settings.ignoreTransparent && alpha < 16) {
+          continue;
+        }
+        const r = data[offset];
+        const g = data[offset + 1];
+        const b = data[offset + 2];
+        const bucketKey = buildBucketKey(r, g, b, bucketStep);
+        const bucket = buckets.get(bucketKey) || {
+          key: bucketKey,
+          sumR: 0,
+          sumG: 0,
+          sumB: 0,
+          count: 0
+        };
+        bucket.sumR += r;
+        bucket.sumG += g;
+        bucket.sumB += b;
+        bucket.count += 1;
+        buckets.set(bucketKey, bucket);
+        sampledPixelCount += 1;
+      }
+
+      const bucketEntries = Array.from(buckets.values())
+        .map((bucket) => {
+          const rgb = {
+            r: Math.round(bucket.sumR / bucket.count),
+            g: Math.round(bucket.sumG / bucket.count),
+            b: Math.round(bucket.sumB / bucket.count)
+          };
+          return {
+            ...bucket,
+            rgb,
+            lab: rgbToLab(rgb)
+          };
+        })
+        .sort((a, b) => b.count - a.count);
+
+      const mergedClusters = [];
+      const bucketToMergedIndex = new Map();
+
+      bucketEntries.forEach((bucket) => {
+        let bestIndex = -1;
+        let bestDistance = Number.POSITIVE_INFINITY;
+
+        mergedClusters.forEach((cluster, index) => {
+          const distance = settings.mergeSimilar
+            ? colorDistance(bucket.rgb, cluster.rgb, settings.distanceMethod)
+            : Number.POSITIVE_INFINITY;
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestIndex = index;
+          }
+        });
+
+        if (bestIndex !== -1 && bestDistance <= mergeThreshold) {
+          const cluster = mergedClusters[bestIndex];
+          cluster.sumR += bucket.rgb.r * bucket.count;
+          cluster.sumG += bucket.rgb.g * bucket.count;
+          cluster.sumB += bucket.rgb.b * bucket.count;
+          cluster.count += bucket.count;
+          cluster.bucketKeys.push(bucket.key);
+          cluster.rgb = {
+            r: Math.round(cluster.sumR / cluster.count),
+            g: Math.round(cluster.sumG / cluster.count),
+            b: Math.round(cluster.sumB / cluster.count)
+          };
+          cluster.lab = rgbToLab(cluster.rgb);
+          bucketToMergedIndex.set(bucket.key, bestIndex);
+        } else {
+          mergedClusters.push({
+            sumR: bucket.rgb.r * bucket.count,
+            sumG: bucket.rgb.g * bucket.count,
+            sumB: bucket.rgb.b * bucket.count,
+            count: bucket.count,
+            bucketKeys: [bucket.key],
+            rgb: bucket.rgb,
+            lab: bucket.lab
+          });
+          bucketToMergedIndex.set(bucket.key, mergedClusters.length - 1);
+        }
+      });
+
+      const limit = getCurrentColorLimit();
+      const finalSeeds = mergedClusters.length > limit
+        ? mergedClusters.slice(0, limit).map((cluster) => ({
+            sumR: 0,
+            sumG: 0,
+            sumB: 0,
+            count: 0,
+            bucketKeys: []
+          }))
+        : null;
+      const mergedToFinalIndex = new Map();
+
+      if (finalSeeds) {
+        mergedClusters.forEach((cluster, clusterIndex) => {
+          let bestSeedIndex = 0;
+          let bestDistance = Number.POSITIVE_INFINITY;
+          finalSeeds.forEach((seed, seedIndex) => {
+            const seedRgb = seed.count > 0
+              ? {
+                  r: Math.round(seed.sumR / seed.count),
+                  g: Math.round(seed.sumG / seed.count),
+                  b: Math.round(seed.sumB / seed.count)
+                }
+              : mergedClusters[seedIndex].rgb;
+            const distance = colorDistance(cluster.rgb, seedRgb, settings.distanceMethod);
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              bestSeedIndex = seedIndex;
+            }
+          });
+          const seed = finalSeeds[bestSeedIndex];
+          seed.sumR += cluster.rgb.r * cluster.count;
+          seed.sumG += cluster.rgb.g * cluster.count;
+          seed.sumB += cluster.rgb.b * cluster.count;
+          seed.count += cluster.count;
+          seed.bucketKeys.push(...cluster.bucketKeys);
+          mergedToFinalIndex.set(clusterIndex, bestSeedIndex);
+        });
+      } else {
+        mergedClusters.forEach((cluster, clusterIndex) => {
+          mergedToFinalIndex.set(clusterIndex, clusterIndex);
+        });
+      }
+
+      const finalClustersBase = (finalSeeds || mergedClusters).map((cluster, index) => {
+        const rgb = cluster.count > 0
+          ? {
+              r: Math.round(cluster.sumR / cluster.count),
+              g: Math.round(cluster.sumG / cluster.count),
+              b: Math.round(cluster.sumB / cluster.count)
+            }
+          : cluster.rgb;
+        const topCandidates = findTopNearestPaletteColors(rgb, 3, settings.distanceMethod);
+        const nearest = topCandidates[0];
+        return {
+          key: `cluster-${index + 1}`,
+          rawRgb: [rgb.r, rgb.g, rgb.b],
+          rawHex: rgbToHex(rgb),
+          count: cluster.count,
+          ratio: sampledPixelCount === 0 ? 0 : cluster.count / sampledPixelCount,
+          matchedId: nearest.id,
+          matchedHex: nearest.hex,
+          matchedRgb: nearest.rgb,
+          distance: nearest.distance,
+          topCandidates,
+          manualOverrideId: null,
+          bucketKeys: [...cluster.bucketKeys]
+        };
+      });
+
+      const bucketToFinalIndex = new Map();
+      bucketToMergedIndex.forEach((mergedIndex, bucketKey) => {
+        bucketToFinalIndex.set(bucketKey, mergedToFinalIndex.get(mergedIndex));
+      });
+
+      const pixelAssignments = new Int16Array(totalPixels);
+      pixelAssignments.fill(-1);
+      for (let index = 0; index < totalPixels; index += 1) {
+        const offset = index * 4;
+        const alpha = data[offset + 3];
+        if (settings.ignoreTransparent && alpha < 16) {
+          continue;
+        }
+        const bucketKey = buildBucketKey(data[offset], data[offset + 1], data[offset + 2], bucketStep);
+        const finalIndex = bucketToFinalIndex.get(bucketKey);
+        if (typeof finalIndex === "number") {
+          pixelAssignments[index] = finalIndex;
+        }
+      }
+
+      return {
+        rawResults: finalClustersBase
+          .sort((a, b) => b.count - a.count)
+          .map((result) => ({
+            ...result,
+            ratio: sampledPixelCount === 0 ? 0 : result.count / sampledPixelCount
+          })),
+        sampledPixelCount,
+        sampleWidth: width,
+        sampleHeight: height,
+        pixelAssignments
+      };
+    }
+
+    function getAnalysisSettingsSnapshot() {
+      return {
+        colorLimit: getCurrentColorLimit(),
+        ignoreTransparent: state.settings.ignoreTransparent,
+        mergeSimilar: state.settings.mergeSimilar,
+        mode: state.settings.mode,
+        distanceMethod: state.settings.distanceMethod
+      };
+    }
+
+    function getEffectivePaletteIdForCluster(cluster) {
+      return state.manualOverrides[cluster.key] || cluster.matchedId;
+    }
+
+    function getDisplayedResults() {
+      if (!state.analysis) return [];
+
+      const rawResults = state.analysis.rawResults.map((cluster) => {
+        const effectiveId = paletteById[getEffectivePaletteIdForCluster(cluster)]
+          ? getEffectivePaletteIdForCluster(cluster)
+          : cluster.matchedId;
+        const paletteColor = paletteById[effectiveId];
+        return {
+          key: cluster.key,
+          rawHex: cluster.rawHex,
+          rawRgb: cluster.rawRgb,
+          count: cluster.count,
+          ratio: cluster.ratio,
+          matchedId: paletteColor.id,
+          matchedHex: paletteColor.hex,
+          matchedRgb: paletteColor.rgb,
+          distance: round(colorDistance(cluster.rawRgb, paletteColor.rgb, state.settings.distanceMethod), 2),
+          topCandidates: findTopNearestPaletteColors(cluster.rawRgb, 3, state.settings.distanceMethod),
+          manualOverrideId: state.manualOverrides[cluster.key] || null,
+          sources: [cluster.key],
+          displayType: "raw",
+          sourceCount: 1
+        };
+      });
+
+      if (state.settings.mode === "raw") {
+        return rawResults.sort((a, b) => b.count - a.count);
+      }
+
+      const grouped = new Map();
+      rawResults.forEach((cluster) => {
+        const groupKey = cluster.matchedId;
+        const bucket = grouped.get(groupKey) || {
+          key: `match-${groupKey}`,
+          matchedId: cluster.matchedId,
+          matchedHex: cluster.matchedHex,
+          matchedRgb: cluster.matchedRgb,
+          count: 0,
+          sources: [],
+          members: [],
+          hasManualOverride: false
+        };
+        bucket.count += cluster.count;
+        bucket.sources.push(...cluster.sources);
+        bucket.members.push(cluster);
+        bucket.hasManualOverride = bucket.hasManualOverride || Boolean(cluster.manualOverrideId);
+        grouped.set(groupKey, bucket);
+      });
+
+      return Array.from(grouped.values())
+        .map((group) => {
+          const averageRgb = weightedAverageRgb(group.members.map((member) => ({
+            rgb: member.rawRgb,
+            count: member.count
+          })));
+          const topCandidates = findTopNearestPaletteColors(averageRgb, 3, state.settings.distanceMethod);
+          return {
+            key: group.key,
+            rawHex: rgbToHex(averageRgb),
+            rawRgb: [averageRgb.r, averageRgb.g, averageRgb.b],
+            count: group.count,
+            ratio: state.analysis.sampledPixelCount === 0 ? 0 : group.count / state.analysis.sampledPixelCount,
+            matchedId: group.matchedId,
+            matchedHex: group.matchedHex,
+            matchedRgb: group.matchedRgb,
+            distance: round(colorDistance(averageRgb, group.matchedRgb, state.settings.distanceMethod), 2),
+            topCandidates,
+            manualOverrideId: group.hasManualOverride ? group.matchedId : null,
+            sources: group.sources,
+            displayType: "match",
+            sourceCount: group.members.length
+          };
+        })
+        .sort((a, b) => b.count - a.count);
+    }
+
+    function getResultBySourceKey(sourceKey) {
+      return getDisplayedResults().find((item) => item.sources.includes(sourceKey)) || null;
+    }
+
+    function createSimulatorColorDescriptor(colorInput, options = {}) {
+      const rgb = normalizeColorInput(colorInput);
+      const hex = options.hex || rgbToHex(rgb);
+      return {
+        id: options.id || "",
+        label: options.label || options.id || hex,
+        hex,
+        rgb: [rgb.r, rgb.g, rgb.b],
+        map: mapColorToTomodachiPalette(rgb)
+      };
+    }
+
+    function createSimulatorFocus({ sourceType, sourceLabel, mode = "single", primary, secondary = null, note = "" }) {
+      return {
+        sourceType,
+        sourceLabel,
+        mode,
+        note,
+        primaryId: primary.id || "",
+        primaryLabel: primary.label,
+        primaryRgb: primary.rgb,
+        primaryHex: primary.hex,
+        primaryMap: primary.map,
+        secondaryId: secondary?.id || "",
+        secondaryLabel: secondary?.label || "",
+        secondaryRgb: secondary?.rgb || null,
+        secondaryHex: secondary?.hex || "",
+        secondaryMap: secondary?.map || null
+      };
+    }
+
+    function buildDefaultSimulatorFocus() {
+      const item = paletteById.A1;
+      const primary = createSimulatorColorDescriptor(item.rgb, {
+        id: item.id,
+        label: `預設拼豆色 ${item.id}`,
+        hex: item.hex
+      });
+      return createSimulatorFocus({
+        sourceType: "default",
+        sourceLabel: `目前定位：${item.id}`,
+        primary,
+        note: "尚未選擇其他顏色時，預設以 A1 作為色盤定位示意。"
+      });
+    }
+
+    function buildSimulatorFocusFromPalette(item) {
+      const primary = createSimulatorColorDescriptor(item.rgb, {
+        id: item.id,
+        label: `色票 ${item.id}`,
+        hex: item.hex
+      });
+      return createSimulatorFocus({
+        sourceType: "palette",
+        sourceLabel: `目前定位：${item.id}`,
+        primary,
+        note: `已切換到內建色卡 ${item.id}，可以直接照著底部色相條與上方色盤的位置找色。`
+      });
+    }
+
+    function buildSimulatorFocusFromResult(item) {
+      const matchedColor = paletteById[item.matchedId];
+      const primary = createSimulatorColorDescriptor(matchedColor.rgb, {
+        id: matchedColor.id,
+        label: `匹配拼豆 ${matchedColor.id}`,
+        hex: matchedColor.hex
+      });
+      const secondary = createSimulatorColorDescriptor(item.rawRgb, {
+        label: `原始抓色 ${item.rawHex}`,
+        hex: item.rawHex
+      });
+      return createSimulatorFocus({
+        sourceType: "result",
+        sourceLabel: `目前定位：${matchedColor.id}`,
+        mode: "dual",
+        primary,
+        secondary,
+        note: `主標記是目前生效的拼豆色，副標記是圖中原始抓色，方便你比較兩者差距。`
+      });
+    }
+
+    function enrichPixelDetailItem(pixelInfo) {
+      const rawRgb = normalizeColorInput(pixelInfo.rgb);
+      const topCandidates = pixelInfo.topCandidates?.length
+        ? pixelInfo.topCandidates
+        : findTopNearestPaletteColors(rawRgb, 3, state.settings.distanceMethod);
+      const matchedColor = topCandidates[0];
+      return {
+        ...pixelInfo,
+        rgb: [rawRgb.r, rawRgb.g, rawRgb.b],
+        hex: pixelInfo.hex || rgbToHex(rawRgb),
+        topCandidates,
+        matchedColor,
+        rawMap: mapColorToTomodachiPalette(rawRgb),
+        matchedMap: mapColorToTomodachiPalette(matchedColor.rgb),
+        displayMode: pixelInfo.displayMode || "raw"
+      };
+    }
+
+    function buildSimulatorFocusFromPixel(pixelInfo, mode = pixelInfo.displayMode || "raw") {
+      const item = enrichPixelDetailItem(pixelInfo);
+      const raw = createSimulatorColorDescriptor(item.rgb, {
+        label: `實際抓色 ${item.hex}`,
+        hex: item.hex
+      });
+      const matched = createSimulatorColorDescriptor(item.matchedColor.rgb, {
+        id: item.matchedColor.id,
+        label: `建議拼豆 ${item.matchedColor.id}`,
+        hex: item.matchedColor.hex
+      });
+      const primary = mode === "matched" ? matched : raw;
+      const secondary = mode === "matched" ? raw : matched;
+      const focusLabel = mode === "matched"
+        ? `目前定位：建議拼豆 ${matched.id || matched.label}`
+        : `目前定位：像素抓色 ${raw.hex}`;
+      const note = `像素座標 (${item.x}, ${item.y})。主標記是目前主視圖追蹤的顏色，副標記是另一個對照點。`;
+
+      return createSimulatorFocus({
+        sourceType: "pixel",
+        sourceLabel: focusLabel,
+        mode: "dual",
+        primary,
+        secondary,
+        note
+      });
+    }
+
+    function ensureSimulatorFocus() {
+      if (!state.simulatorFocus) {
+        state.simulatorFocus = buildDefaultSimulatorFocus();
+      }
+      return state.simulatorFocus;
+    }
+
+    function setSimulatorFocus(focus) {
+      state.simulatorFocus = focus || buildDefaultSimulatorFocus();
+    }
+
+    function getDetailDisplayColor(detail) {
+      if (!detail && state.activeResultKey) {
+        const activeItem = getDisplayedResults().find((item) => item.key === state.activeResultKey);
+        return activeItem ? paletteById[activeItem.matchedId] || activeItem.topCandidates?.[0] || null : null;
+      }
+      if (!detail) return null;
+      if (detail.type === "palette") {
+        return paletteById[detail.id] || null;
+      }
+      if (detail.type === "result") {
+        return paletteById[detail.item.matchedId] || detail.item.topCandidates?.[0] || null;
+      }
+      if (detail.type === "pixel") {
+        return detail.item.topCandidates?.[0] || null;
+      }
+      return null;
+    }
+
+    function setRecentView(paletteId) {
+      if (!paletteById[paletteId]) return;
+      state.recentViews = [paletteId, ...state.recentViews.filter((id) => id !== paletteId)].slice(0, MAX_RECENT);
+      saveState();
+      renderRecentViews();
+    }
+
+    function showToast(message) {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.textContent = message;
+      els.toastWrap.appendChild(toast);
+      window.setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+      }, 2100);
+      window.setTimeout(() => toast.remove(), 2600);
+    }
+
+    function copyText(text, successMessage = "已複製") {
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(() => showToast(successMessage))
+          .catch(() => fallbackCopyText(text, successMessage));
+      } else {
+        fallbackCopyText(text, successMessage);
+      }
+    }
+
+    function fallbackCopyText(text, successMessage) {
+      const tempInput = document.createElement("textarea");
+      tempInput.value = text;
+      tempInput.setAttribute("readonly", "");
+      tempInput.style.position = "absolute";
+      tempInput.style.left = "-9999px";
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      tempInput.remove();
+      showToast(successMessage);
+    }
+
+    function downloadTextFile(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function formatRgb(rgb) {
+      const color = normalizeColorInput(rgb);
+      return `${color.r}, ${color.g}, ${color.b}`;
+    }
+
+    function formatRatio(ratio) {
+      return `${round(ratio * 100, 2)}%`;
+    }
+
+    function formatDistance(distance) {
+      return state.settings.distanceMethod === "rgb"
+        ? `${round(distance, 1)} RGB`
+        : `${round(distance, 2)} ΔE`;
+    }
+
+    function formatDisplayLabel(item) {
+      if (item.displayType === "raw") {
+        return item.manualOverrideId ? "手動指定後" : "建議拼豆色";
+      }
+      return item.sourceCount > 1 ? `合併 ${item.sourceCount} 群色` : "匹配拼豆色";
+    }
+
+    function renderHeroBands() {
+      const bandA = BUILTIN_PALETTE.slice(0, 7);
+      const bandB = [
+        paletteById.D13,
+        paletteById.E13,
+        paletteById.C4,
+        paletteById.B4,
+        paletteById.G10,
+        paletteById.H1,
+        paletteById.M13
+      ];
+      els.heroBandA.innerHTML = bandA.map((item) => `<span style="background:${item.hex}"></span>`).join("");
+      els.heroBandB.innerHTML = bandB.map((item) => `<span style="background:${item.hex}"></span>`).join("");
+    }
+
+    function syncSettingsInputs() {
+      els.heroPaletteCount.textContent = BUILTIN_PALETTE.length;
+      els.paletteStatusPill.textContent = `已載入 ${BUILTIN_PALETTE.length} 色`;
+      els.paletteCountPill.textContent = `${BUILTIN_PALETTE.length} 色`;
+      els.colorLimitSelect.value = state.settings.colorLimitMode;
+      els.customColorLimitInput.value = state.settings.customColorLimit;
+      els.customColorLimitInput.disabled = state.settings.colorLimitMode !== "custom";
+      els.distanceMethodSelect.value = state.settings.distanceMethod;
+      els.ignoreTransparentCheckbox.checked = state.settings.ignoreTransparent;
+      els.mergeSimilarCheckbox.checked = state.settings.mergeSimilar;
+      els.analysisModeRadios.forEach((radio) => {
+        radio.checked = radio.value === state.settings.mode;
+      });
+      els.zoomRange.value = Math.round(state.settings.zoom * 100);
+      els.zoomLabel.textContent = `${Math.round(state.settings.zoom * 100)}%`;
+    }
+
+    function renderPaletteOptions() {
+      els.paletteIdOptions.innerHTML = BUILTIN_PALETTE
+        .map((item) => `<option value="${item.id}">${item.id} ${item.hex}</option>`)
+        .join("");
+    }
+
+    function renderRecentViews() {
+      if (!state.recentViews.length) {
+        els.recentColors.innerHTML = `<div class="empty-state">目前還沒有最近查看色。點一下任一色票後，這裡會自動記錄。</div>`;
+        return;
+      }
+
+      els.recentColors.innerHTML = state.recentViews
+        .map((id) => {
+          const item = paletteById[id];
+          return `
+            <div class="color-chip">
+              <button type="button" data-action="open-palette" data-id="${item.id}">
+                <span class="swatch small" style="background:${item.hex}"></span>
+                <span class="meta">
+                  <strong>${item.id}</strong>
+                  <span>${item.hex}</span>
+                </span>
+              </button>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderPaletteBrowser() {
+      const query = state.paletteSearch.trim().toLowerCase();
+      const filtered = BUILTIN_PALETTE.filter((item) => {
+        if (!query) return true;
+        return item.id.toLowerCase().includes(query) ||
+          item.hex.toLowerCase().includes(query) ||
+          item.name.toLowerCase().includes(query);
+      });
+
+      els.paletteSearchSummary.textContent = query
+        ? `找到 ${filtered.length} 筆結果。`
+        : `顯示全部 ${BUILTIN_PALETTE.length} 色。`;
+
+      els.paletteBrowser.innerHTML = filtered.length
+        ? filtered.map((item) => `
+            <button type="button" class="palette-card ${state.detail?.type === "palette" && state.detail.id === item.id ? "is-active" : ""}" data-action="open-palette" data-id="${item.id}">
+              <span class="swatch" style="background:${item.hex}"></span>
+              <strong>${item.id}</strong>
+              <span class="mono">${item.hex}</span>
+            </button>
+          `).join("")
+        : `<div class="empty-state">找不到符合「${escapeHtml(query)}」的色票。</div>`;
+    }
+
+    function renderTop10() {
+      const results = getDisplayedResults().slice(0, 10);
+      if (!results.length) {
+        els.top10Colors.innerHTML = `<div class="empty-state">還沒有分析結果。上傳圖片後，這裡會列出最常用前 10 色。</div>`;
+        return;
+      }
+
+      els.top10Colors.innerHTML = results.map((item) => `
+        <div class="color-chip">
+          <button type="button" data-action="open-result" data-key="${item.key}">
+            <span class="swatch small" style="background:${item.matchedHex}"></span>
+            <span class="meta">
+              <strong>${item.matchedId}</strong>
+              <span>${formatRatio(item.ratio)} / ${item.matchedHex}</span>
+            </span>
+          </button>
+        </div>
+      `).join("");
+    }
+
+    function renderResults() {
+      const results = getDisplayedResults();
+      const hasAnalysis = Boolean(state.analysis);
+      els.exportJsonButton.disabled = !hasAnalysis || !results.length;
+      els.exportCsvButton.disabled = !hasAnalysis || !results.length;
+      els.exportSwatchesButton.disabled = !hasAnalysis || !results.length;
+
+      if (!results.length) {
+        els.resultsList.innerHTML = `<div class="empty-state">分析結果會顯示在這裡。你可以切換原始抓色 / 自動匹配拼豆色卡，並從詳細資訊裡手動修正結果。</div>`;
+        return;
+      }
+
+      els.resultsList.innerHTML = results.map((item) => `
+        <article class="result-card ${state.activeResultKey === item.key ? "is-active" : ""}">
+          <div class="result-card-top">
+            <div class="result-card-main">
+              <span class="swatch" style="background:${item.matchedHex}"></span>
+              <div class="result-card-body">
+                <div class="result-card-title">
+                  <strong>${item.matchedId}</strong>
+                  <span class="badge">${formatDisplayLabel(item)}</span>
+                  ${item.manualOverrideId ? `<span class="badge alt">手動修正</span>` : ""}
+                  ${item.displayType === "raw" ? `<span class="badge gray">原始色 ${item.rawHex}</span>` : ""}
+                </div>
+                <div class="code-line">
+                  <span class="mono">${item.matchedHex}</span>
+                  <span class="muted">RGB ${formatRgb(item.matchedRgb)}</span>
+                </div>
+                <div class="tiny">${describeHexPosition(item.matchedRgb)}</div>
+              </div>
+            </div>
+          </div>
+          <div class="result-meta-grid">
+            <div class="meta-box">
+              <strong>使用數量 / 比例</strong>
+              <span>${item.count.toLocaleString()} / ${formatRatio(item.ratio)}</span>
+            </div>
+            <div class="meta-box">
+              <strong>原始抓色</strong>
+              <span class="mono">${item.rawHex}</span>
+            </div>
+            <div class="meta-box">
+              <strong>色差距離</strong>
+              <span>${formatDistance(item.distance)}</span>
+            </div>
+          </div>
+          <div class="result-actions">
+            <button type="button" class="mini-btn" data-action="open-result" data-key="${item.key}">查看詳情</button>
+            <button type="button" class="mini-btn" data-action="copy-hex" data-hex="${item.matchedHex}">複製 HEX</button>
+            <button type="button" class="mini-btn" data-action="highlight-result" data-key="${item.key}">高亮相近像素</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderHoverInspector() {
+      if (!state.hoverPixel) {
+        els.hoverInspector.innerHTML = `
+          <h4>滑鼠取色</h4>
+          <p>移到圖片上時，這裡會顯示當前像素的 HEX 與 RGB。</p>
+        `;
+        return;
+      }
+
+      const pixel = state.hoverPixel;
+      els.hoverInspector.innerHTML = `
+        <h4>滑鼠取色</h4>
+        <div class="swatch-line">
+          <span class="swatch small" style="background:${pixel.hex}"></span>
+          <div>
+            <div class="mono">${pixel.hex}</div>
+            <div class="tiny">RGB ${formatRgb(pixel.rgb)} / (${pixel.x}, ${pixel.y})</div>
+          </div>
+        </div>
+        <p>${describeHexPosition(pixel.rgb)}</p>
+      `;
+    }
+
+    function renderClickInspector() {
+      if (!state.clickedPixel) {
+        els.clickInspector.innerHTML = `
+          <h4>點擊候選色</h4>
+          <p>點一下圖片後，這裡會顯示最近拼豆色與前 3 名候選色。</p>
+        `;
+        return;
+      }
+
+      const pixel = state.clickedPixel;
+      els.clickInspector.innerHTML = `
+        <h4>點擊候選色</h4>
+        <div class="swatch-line">
+          <span class="swatch small" style="background:${pixel.hex}"></span>
+          <div>
+            <div class="mono">${pixel.hex}</div>
+            <div class="tiny">RGB ${formatRgb(pixel.rgb)} / (${pixel.x}, ${pixel.y})</div>
+          </div>
+        </div>
+        <div class="tiny">最接近：${pixel.topCandidates[0].id} ${pixel.topCandidates[0].hex} / ${formatDistance(pixel.topCandidates[0].distance)}</div>
+        <div class="candidate-list">
+          ${pixel.topCandidates.map((candidate, index) => `
+            <div class="candidate-row">
+              <span class="rank">${index + 1}</span>
+              <span class="swatch small" style="background:${candidate.hex}"></span>
+              <span class="text">
+                <strong>${candidate.id} ${candidate.hex}</strong>
+                <span>RGB ${formatRgb(candidate.rgb)} / ${formatDistance(candidate.distance)}</span>
+              </span>
+              <button type="button" class="mini-btn" data-action="open-palette" data-id="${candidate.id}">查看色卡</button>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function getPreviewBaseScale(imageWidth, imageHeight) {
+      const availableWidth = Math.max(260, els.previewStage.clientWidth || 640);
+      const availableHeight = 500;
+      return Math.min(1, availableWidth / imageWidth, availableHeight / imageHeight);
+    }
+
+    function renderPreview() {
+      const hasImage = Boolean(state.sourceImage);
+      els.analyzeButton.disabled = !hasImage;
+      els.emptyPreviewMessage.style.display = hasImage ? "none" : "grid";
+
+      if (!hasImage) {
+        els.previewCanvas.width = 0;
+        els.previewCanvas.height = 0;
+        els.highlightCanvas.width = 0;
+        els.highlightCanvas.height = 0;
+        els.sampleInfoText.textContent = "目前沒有圖片。";
+        return;
+      }
+
+      const image = state.sourceImage;
+      const baseScale = getPreviewBaseScale(image.width, image.height);
+      const displayScale = baseScale * state.settings.zoom;
+      const drawWidth = Math.max(1, Math.round(image.width * displayScale));
+      const drawHeight = Math.max(1, Math.round(image.height * displayScale));
+
+      els.previewCanvas.width = drawWidth;
+      els.previewCanvas.height = drawHeight;
+      els.highlightCanvas.width = drawWidth;
+      els.highlightCanvas.height = drawHeight;
+      els.previewStage.style.width = `${drawWidth}px`;
+      els.previewStage.style.height = `${drawHeight}px`;
+
+      els.previewCtx.clearRect(0, 0, drawWidth, drawHeight);
+      els.previewCtx.imageSmoothingEnabled = false;
+      els.previewCtx.drawImage(image, 0, 0, drawWidth, drawHeight);
+
+      els.sampleInfoText.textContent = `${state.imageName || "未命名圖片"} / 原始尺寸 ${image.width} × ${image.height}`;
+      renderHighlightOverlay();
+    }
+
+    function renderHighlightOverlay() {
+      const ctx = els.highlightCtx;
+      const canvas = els.highlightCanvas;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!state.analysis || !state.activeResultKey) {
+        return;
+      }
+
+      const displayItem = getDisplayedResults().find((item) => item.key === state.activeResultKey);
+      if (!displayItem) return;
+
+      const clusterIndexes = new Set(
+        displayItem.sources
+          .map((sourceKey) => state.analysis.rawResults.findIndex((item) => item.key === sourceKey))
+          .filter((index) => index >= 0)
+      );
+      if (!clusterIndexes.size) return;
+
+      const maskCanvas = document.createElement("canvas");
+      maskCanvas.width = state.analysis.sampleWidth;
+      maskCanvas.height = state.analysis.sampleHeight;
+      const maskCtx = maskCanvas.getContext("2d");
+      const maskImage = maskCtx.createImageData(maskCanvas.width, maskCanvas.height);
+
+      for (let index = 0; index < state.analysis.pixelAssignments.length; index += 1) {
+        const clusterIndex = state.analysis.pixelAssignments[index];
+        if (!clusterIndexes.has(clusterIndex)) continue;
+        const offset = index * 4;
+        maskImage.data[offset] = 255;
+        maskImage.data[offset + 1] = 255;
+        maskImage.data[offset + 2] = 255;
+        maskImage.data[offset + 3] = 255;
+      }
+
+      maskCtx.putImageData(maskImage, 0, 0);
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = "source-in";
+      ctx.fillStyle = "rgba(255, 127, 96, 0.34)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
+
+    function simulateTomodachiPaletteColor(hue, xNorm, yNorm) {
+      // 依據《朋友收集》截圖做的近似模擬：
+      // X 軸由灰白走向該色相，Y 軸由亮到暗；左上接近白，左下接近黑灰，右上是亮色，右下是深色。
+      const saturation = clamp(xNorm ** 0.95, 0, 1);
+      const brightness = clamp(1 - yNorm, 0, 1);
+      const grayValue = Math.round(brightness * 255);
+      const grayRgb = { r: grayValue, g: grayValue, b: grayValue };
+      const hueRgb = hsvToRgb(hue, 0.18 + saturation * 0.82, 0.12 + brightness * 0.88);
+      return {
+        r: Math.round(grayRgb.r * (1 - saturation) + hueRgb.r * saturation),
+        g: Math.round(grayRgb.g * (1 - saturation) + hueRgb.g * saturation),
+        b: Math.round(grayRgb.b * (1 - saturation) + hueRgb.b * saturation)
+      };
+    }
+
+    function getMarkerOffset(primaryX, primaryY, secondaryX, secondaryY) {
+      const distance = Math.hypot(primaryX - secondaryX, primaryY - secondaryY);
+      return distance < 30 ? { x: 22, y: -18 } : { x: 0, y: 0 };
+    }
+
+    function drawPaletteMarker(ctx, x, y, colorHex, options = {}) {
+      const radius = options.radius || 18;
+      ctx.save();
+      ctx.strokeStyle = options.outerStroke || "rgba(255,255,255,0.98)";
+      ctx.lineWidth = options.outerWidth || 4;
+      if (options.dashed) ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = options.innerStroke || "rgba(47,49,45,0.92)";
+      ctx.lineWidth = options.innerWidth || 2.5;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = colorHex;
+      ctx.beginPath();
+      ctx.arc(x, y, options.centerRadius || 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawHueMarker(ctx, x, y, width, height, colorHex, options = {}) {
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 255, 255, 0.94)";
+      ctx.strokeStyle = options.stroke || "rgba(47,49,45,0.92)";
+      ctx.lineWidth = 2;
+      if (options.dashed) ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x + 10, y);
+      ctx.lineTo(x + width - 10, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + 10);
+      ctx.lineTo(x + width, y + height - 10);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - 10, y + height);
+      ctx.lineTo(x + 10, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - 10);
+      ctx.lineTo(x, y + 10);
+      ctx.quadraticCurveTo(x, y, x + 10, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = colorHex;
+      ctx.beginPath();
+      ctx.arc(x + (width / 2), y + (height / 2), Math.min(7, width / 3), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function renderTomodachiLegend(container, focus) {
+      if (!container || !focus) return;
+      const items = [
+        {
+          kind: "primary",
+          label: focus.primaryLabel,
+          hex: focus.primaryHex,
+          map: focus.primaryMap
+        }
+      ];
+
+      if (focus.secondaryMap) {
+        items.push({
+          kind: "secondary",
+          label: focus.secondaryLabel,
+          hex: focus.secondaryHex,
+          map: focus.secondaryMap
+        });
+      }
+
+      container.innerHTML = items.map((item) => `
+        <div class="simulator-legend-item">
+          <div class="simulator-legend-head">
+            <span class="legend-dot ${item.kind === "secondary" ? "secondary" : ""}" style="background:${item.hex}"></span>
+            <strong>${item.label}</strong>
+          </div>
+          <div class="tiny mono">${item.hex}</div>
+          <div class="tiny">底部 ${item.map.hueSliderX}% / 上方 X ${item.map.paletteX}% / Y ${item.map.paletteY}%</div>
+        </div>
+      `).join("");
+    }
+
+    function renderTomodachiCanvasSet(paletteCanvas, hueCanvas, focus, options = {}) {
+      if (!paletteCanvas || !hueCanvas || !focus) return;
+
+      const primaryRgb = normalizeColorInput(focus.primaryRgb);
+      const primaryHsv = rgbToHsv(primaryRgb);
+      const primaryMap = focus.primaryMap;
+      const secondaryMap = focus.secondaryMap;
+
+      const paletteCtx = paletteCanvas.getContext("2d");
+      const paletteWidth = paletteCanvas.width;
+      const paletteHeight = paletteCanvas.height;
+      const imageData = paletteCtx.createImageData(paletteWidth, paletteHeight);
+
+      for (let y = 0; y < paletteHeight; y += 1) {
+        for (let x = 0; x < paletteWidth; x += 1) {
+          const xNorm = x / (paletteWidth - 1);
+          const yNorm = y / (paletteHeight - 1);
+          const sim = simulateTomodachiPaletteColor(primaryHsv.h, xNorm, yNorm);
+          const offset = (y * paletteWidth + x) * 4;
+          imageData.data[offset] = sim.r;
+          imageData.data[offset + 1] = sim.g;
+          imageData.data[offset + 2] = sim.b;
+          imageData.data[offset + 3] = 255;
+        }
+      }
+      paletteCtx.putImageData(imageData, 0, 0);
+
+      const primaryPaletteX = (primaryMap.paletteX / 100) * paletteWidth;
+      const primaryPaletteY = (primaryMap.paletteY / 100) * paletteHeight;
+      drawPaletteMarker(paletteCtx, primaryPaletteX, primaryPaletteY, focus.primaryHex, {
+        radius: options.compact ? 15 : 18
+      });
+
+      if (secondaryMap) {
+        const secondaryPaletteX = (secondaryMap.paletteX / 100) * paletteWidth;
+        const secondaryPaletteY = (secondaryMap.paletteY / 100) * paletteHeight;
+        const offset = getMarkerOffset(primaryPaletteX, primaryPaletteY, secondaryPaletteX, secondaryPaletteY);
+        const adjustedSecondaryX = clamp(secondaryPaletteX + offset.x, 16, paletteWidth - 16);
+        const adjustedSecondaryY = clamp(secondaryPaletteY + offset.y, 16, paletteHeight - 16);
+        drawPaletteMarker(
+          paletteCtx,
+          adjustedSecondaryX,
+          adjustedSecondaryY,
+          focus.secondaryHex,
+          {
+            radius: options.compact ? 12 : 14,
+            outerStroke: "rgba(255,255,255,0.96)",
+            innerStroke: "rgba(51,124,115,0.95)",
+            dashed: true,
+            centerRadius: options.compact ? 4 : 5
+          }
+        );
+      }
+
+      const hueCtx = hueCanvas.getContext("2d");
+      const hueWidth = hueCanvas.width;
+      const hueHeight = hueCanvas.height;
+      for (let x = 0; x < hueWidth; x += 1) {
+        const gameHuePercent = x / (hueWidth - 1);
+        const actualHue = (360 - (gameHuePercent * 360)) % 360;
+        const color = hsvToRgb(actualHue, 1, 1);
+        hueCtx.fillStyle = rgbToHex(color);
+        hueCtx.fillRect(x, 0, 1, hueHeight);
+      }
+
+      const hueMarkerWidth = options.compact ? 18 : 20;
+      const hueMarkerHeight = hueHeight - 16;
+      const primaryHueX = (primaryMap.hueSliderX / 100) * hueWidth;
+      drawHueMarker(
+        hueCtx,
+        primaryHueX - (hueMarkerWidth / 2),
+        8,
+        hueMarkerWidth,
+        hueMarkerHeight,
+        focus.primaryHex
+      );
+
+      if (secondaryMap) {
+        const secondaryHueX = (secondaryMap.hueSliderX / 100) * hueWidth;
+        const hueOffset = Math.abs(primaryHueX - secondaryHueX) < 24 ? 18 : 0;
+        drawHueMarker(
+          hueCtx,
+          secondaryHueX - (hueMarkerWidth / 2),
+          8 + hueOffset,
+          hueMarkerWidth,
+          Math.max(20, hueMarkerHeight - hueOffset),
+          focus.secondaryHex,
+          {
+            stroke: "rgba(51,124,115,0.95)",
+            dashed: true
+          }
+        );
+      }
+    }
+
+    function renderTomodachiGuide(targetTitle, targetText, focus) {
+      if (!targetTitle || !targetText || !focus) return;
+      targetTitle.textContent = focus.sourceLabel;
+      const detailText = `${describeTomodachiPalettePosition(focus.primaryRgb)} ${focus.note || ""}`;
+      targetText.textContent = detailText.trim();
+    }
+
+    function renderTabs() {
+      els.tabButtons.forEach((button) => {
+        const isActive = button.dataset.tab === state.activeTab;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+      els.analyzeTabPanel.classList.toggle("is-active", state.activeTab === "analyze");
+      els.paletteTabPanel.classList.toggle("is-active", state.activeTab === "palette");
+    }
+
+    function setActiveTab(tab) {
+      state.activeTab = tab === "palette" ? "palette" : "analyze";
+      saveState();
+    }
+
+    function renderTomodachiSimulator() {
+      const focus = ensureSimulatorFocus();
+      renderTomodachiCanvasSet(els.tomodachiPaletteCanvas, els.tomodachiHueCanvas, focus);
+      renderTomodachiLegend(els.tomodachiLegend, focus);
+      renderTomodachiGuide(els.tomodachiGuideTitle, els.tomodachiGuideText, focus);
+      renderTomodachiCanvasSet(els.paletteTomodachiPaletteCanvas, els.paletteTomodachiHueCanvas, focus);
+      renderTomodachiLegend(els.paletteTomodachiLegend, focus);
+      renderTomodachiGuide(els.paletteTomodachiGuideTitle, els.paletteTomodachiGuideText, focus);
+    }
+
+    function buildDetailCandidateList(candidates) {
+      return `
+        <div class="candidate-list">
+          ${candidates.map((candidate, index) => `
+            <div class="candidate-row">
+              <span class="rank">${index + 1}</span>
+              <span class="swatch small" style="background:${candidate.hex}"></span>
+              <span class="text">
+                <strong>${candidate.id} ${candidate.hex}</strong>
+                <span>RGB ${formatRgb(candidate.rgb)} / ${formatDistance(candidate.distance)}</span>
+              </span>
+              <button type="button" class="mini-btn" data-action="open-palette" data-id="${candidate.id}">查看色卡</button>
+              <button type="button" class="mini-btn" data-action="copy-hex" data-hex="${candidate.hex}">複製</button>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function buildPixelSimulatorSection(item) {
+      return `
+        <div class="detail-simulator">
+          <div class="canvas-label">
+            <span>像素取樣的朋友收集色盤對照</span>
+            <span class="tiny">主視圖目前會跟著下方「主模擬」按鈕切換</span>
+          </div>
+          <canvas id="detailTomodachiPaletteCanvas" class="palette-canvas" width="560" height="315" aria-label="像素詳情朋友收集上方大色盤"></canvas>
+          <canvas id="detailTomodachiHueCanvas" class="hue-canvas" width="560" height="70" aria-label="像素詳情朋友收集底部色相條"></canvas>
+          <div id="detailTomodachiLegend" class="simulator-legend"></div>
+          <div class="toggle-action-row">
+            <button type="button" class="mini-btn ${item.displayMode === "raw" ? "is-active" : ""}" data-action="set-pixel-focus-mode" data-mode="raw">主模擬看實際抓色</button>
+            <button type="button" class="mini-btn ${item.displayMode === "matched" ? "is-active" : ""}" data-action="set-pixel-focus-mode" data-mode="matched">主模擬看建議拼豆</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPixelDetailSimulator(item) {
+      const paletteCanvas = document.getElementById("detailTomodachiPaletteCanvas");
+      const hueCanvas = document.getElementById("detailTomodachiHueCanvas");
+      const legend = document.getElementById("detailTomodachiLegend");
+      if (!paletteCanvas || !hueCanvas || !legend) return;
+
+      const rawDescriptor = createSimulatorColorDescriptor(item.rgb, {
+        label: `實際抓色 ${item.hex}`,
+        hex: item.hex
+      });
+      const matchedDescriptor = createSimulatorColorDescriptor(item.matchedColor.rgb, {
+        id: item.matchedColor.id,
+        label: `建議拼豆 ${item.matchedColor.id}`,
+        hex: item.matchedColor.hex
+      });
+
+      const focus = item.displayMode === "matched"
+        ? createSimulatorFocus({
+            sourceType: "pixel",
+            sourceLabel: `目前定位：建議拼豆 ${item.matchedColor.id}`,
+            mode: "dual",
+            primary: matchedDescriptor,
+            secondary: rawDescriptor,
+            note: `像素 (${item.x}, ${item.y}) 的雙定位對照`
+          })
+        : createSimulatorFocus({
+            sourceType: "pixel",
+            sourceLabel: `目前定位：像素抓色 ${item.hex}`,
+            mode: "dual",
+            primary: rawDescriptor,
+            secondary: matchedDescriptor,
+            note: `像素 (${item.x}, ${item.y}) 的雙定位對照`
+          });
+
+      renderTomodachiCanvasSet(paletteCanvas, hueCanvas, focus, { compact: true });
+      renderTomodachiLegend(legend, focus);
+    }
+
+    function renderDetailDrawer() {
+      const detail = state.detail;
+      const isOpen = Boolean(detail);
+      els.detailOverlay.classList.toggle("is-open", isOpen);
+      els.detailDrawer.classList.toggle("is-open", isOpen);
+      els.detailDrawer.setAttribute("aria-hidden", String(!isOpen));
+
+      if (!detail) {
+        els.drawerTitle.textContent = "顏色詳情";
+        els.drawerSubtitle.textContent = "點一下結果卡或色卡即可查看完整資訊。";
+        els.drawerContent.innerHTML = `<div class="empty-state">目前尚未選擇顏色。</div>`;
+        return;
+      }
+
+      if (detail.type === "palette") {
+        const item = paletteById[detail.id];
+        const hsl = rgbToHsl(item.rgb);
+        const hsv = rgbToHsv(item.rgb);
+        const mapped = mapColorToTomodachiPalette(item.rgb);
+        els.drawerTitle.textContent = `色票詳情：${item.id}`;
+        els.drawerSubtitle.textContent = "內建拼豆色卡";
+        els.drawerContent.innerHTML = `
+          <div class="big-swatch" style="background:${item.hex}"></div>
+          <div class="detail-grid">
+            <div class="detail-item"><strong>拼豆色號</strong><span>${item.id}</span></div>
+            <div class="detail-item"><strong>顏色名稱</strong><span>${item.name}</span></div>
+            <div class="detail-item"><strong>HEX</strong><span class="mono">${item.hex}</span></div>
+            <div class="detail-item"><strong>RGB</strong><span>${formatRgb(item.rgb)}</span></div>
+            <div class="detail-item"><strong>HSV</strong><span>H ${hsv.h} / S ${hsv.s}% / V ${hsv.v}%</span></div>
+            <div class="detail-item"><strong>HSL</strong><span>H ${hsl.h} / S ${hsl.s}% / L ${hsl.l}%</span></div>
+          </div>
+          <div class="helper-box">${describeHexPosition(item.rgb)}</div>
+          <div class="guide-box">
+            <strong>朋友收集色盤定位</strong>
+            <span>底部色相條：${mapped.hueSliderX}% / 上方色盤 X：${mapped.paletteX}% / Y：${mapped.paletteY}%</span>
+            <span>${describeTomodachiPalettePosition(item.rgb)}</span>
+          </div>
+          <div class="result-actions">
+            <button type="button" class="secondary-btn" data-action="copy-hex" data-hex="${item.hex}">複製 HEX</button>
+          </div>
+        `;
+      }
+
+      if (detail.type === "result") {
+        const item = detail.item;
+        const matchedColor = paletteById[item.matchedId];
+        const rawRgb = normalizeColorInput(item.rawRgb);
+        const hsl = rgbToHsl(matchedColor.rgb);
+        const hsv = rgbToHsv(matchedColor.rgb);
+        const mapped = mapColorToTomodachiPalette(matchedColor.rgb);
+        els.drawerTitle.textContent = `分析結果：${item.matchedId}`;
+        els.drawerSubtitle.textContent = item.displayType === "match"
+          ? `已合併 ${item.sourceCount} 組原始顏色`
+          : "單一原始抓色";
+        els.drawerContent.innerHTML = `
+          <div class="big-swatch" style="background:${matchedColor.hex}"></div>
+          <div class="detail-grid">
+            <div class="detail-item"><strong>拼豆色號</strong><span>${matchedColor.id}</span></div>
+            <div class="detail-item"><strong>對應 HEX</strong><span class="mono">${matchedColor.hex}</span></div>
+            <div class="detail-item"><strong>RGB</strong><span>${formatRgb(matchedColor.rgb)}</span></div>
+            <div class="detail-item"><strong>實際抓到的顏色 HEX</strong><span class="mono">${item.rawHex}</span></div>
+            <div class="detail-item"><strong>實際抓到的 RGB</strong><span>${formatRgb(rawRgb)}</span></div>
+            <div class="detail-item"><strong>色差值</strong><span>${formatDistance(item.distance)}</span></div>
+            <div class="detail-item"><strong>使用比例</strong><span>${formatRatio(item.ratio)}</span></div>
+            <div class="detail-item"><strong>使用像素數</strong><span>${item.count.toLocaleString()}</span></div>
+            <div class="detail-item"><strong>HSV</strong><span>H ${hsv.h} / S ${hsv.s}% / V ${hsv.v}%</span></div>
+            <div class="detail-item"><strong>HSL</strong><span>H ${hsl.h} / S ${hsl.s}% / L ${hsl.l}%</span></div>
+          </div>
+          <div class="helper-box">${describeHexPosition(matchedColor.rgb)}</div>
+          <div class="guide-box">
+            <strong>朋友收集色盤定位</strong>
+            <span>底部色相條：${mapped.hueSliderX}% / 上方色盤 X：${mapped.paletteX}% / Y：${mapped.paletteY}%</span>
+            <span>${describeTomodachiPalettePosition(matchedColor.rgb)}</span>
+          </div>
+          <div>
+            <strong style="display:block; margin-bottom:10px;">前 3 名最接近候選色</strong>
+            ${buildDetailCandidateList(item.topCandidates)}
+          </div>
+          <div class="field-row">
+            <label for="manualOverrideInput">手動修正匹配結果</label>
+            <input id="manualOverrideInput" class="text-input" type="text" list="paletteIdOptions" value="${item.matchedId}" placeholder="輸入拼豆色號，例如 D13">
+            <small>若目前是合併模式，會把這張結果卡所包含的原始群色一起改成你指定的拼豆色號。</small>
+          </div>
+          <div class="result-actions">
+            <button type="button" class="secondary-btn" data-action="apply-manual-override">套用手動指定</button>
+            <button type="button" class="ghost-btn" data-action="clear-manual-override">清除手動指定</button>
+            <button type="button" class="ghost-btn" data-action="highlight-result" data-key="${item.key}">高亮相近像素</button>
+            <button type="button" class="secondary-btn" data-action="copy-hex" data-hex="${matchedColor.hex}">複製 HEX</button>
+          </div>
+        `;
+      }
+
+      if (detail.type === "pixel") {
+        const item = enrichPixelDetailItem(detail.item);
+        detail.item = item;
+        const matchedColor = item.matchedColor;
+        const hsl = rgbToHsl(item.rgb);
+        const hsv = rgbToHsv(item.rgb);
+        const rawMapped = item.rawMap;
+        const matchedMapped = item.matchedMap;
+        els.drawerTitle.textContent = "像素取樣詳情";
+        els.drawerSubtitle.textContent = `座標 (${item.x}, ${item.y})`;
+        els.drawerContent.innerHTML = `
+          <div class="big-swatch" style="background:${item.hex}"></div>
+          <div class="detail-grid">
+            <div class="detail-item"><strong>實際抓色 HEX</strong><span class="mono">${item.hex}</span></div>
+            <div class="detail-item"><strong>實際抓色 RGB</strong><span>${formatRgb(item.rgb)}</span></div>
+            <div class="detail-item"><strong>建議拼豆色號</strong><span>${matchedColor.id}</span></div>
+            <div class="detail-item"><strong>建議拼豆 HEX</strong><span class="mono">${matchedColor.hex}</span></div>
+            <div class="detail-item"><strong>HSV</strong><span>H ${hsv.h} / S ${hsv.s}% / V ${hsv.v}%</span></div>
+            <div class="detail-item"><strong>HSL</strong><span>H ${hsl.h} / S ${hsl.s}% / L ${hsl.l}%</span></div>
+          </div>
+          <div class="helper-box">${describeHexPosition(item.rgb)}</div>
+          <div class="guide-box">
+            <strong>實際抓色的朋友收集定位</strong>
+            <span>底部色相條：${rawMapped.hueSliderX}% / 上方色盤 X：${rawMapped.paletteX}% / Y：${rawMapped.paletteY}%</span>
+            <span>${describeTomodachiPalettePosition(item.rgb)}</span>
+          </div>
+          <div class="guide-box">
+            <strong>建議拼豆色的朋友收集定位</strong>
+            <span>底部色相條：${matchedMapped.hueSliderX}% / 上方色盤 X：${matchedMapped.paletteX}% / Y：${matchedMapped.paletteY}%</span>
+            <span>${describeTomodachiPalettePosition(matchedColor.rgb)}</span>
+          </div>
+          ${buildPixelSimulatorSection(item)}
+          <div>
+            <strong style="display:block; margin-bottom:10px;">前 3 名最接近候選色</strong>
+            ${buildDetailCandidateList(item.topCandidates)}
+          </div>
+        `;
+        renderPixelDetailSimulator(item);
+      }
+
+    }
+
+    function openPaletteDetail(id) {
+      if (!paletteById[id]) return;
+      state.detail = { type: "palette", id };
+      state.activeResultKey = null;
+      setSimulatorFocus(buildSimulatorFocusFromPalette(paletteById[id]));
+      setRecentView(id);
+      renderAll();
+    }
+
+    function openResultDetail(key) {
+      const item = getDisplayedResults().find((result) => result.key === key);
+      if (!item) return;
+      state.detail = { type: "result", item };
+      state.activeResultKey = key;
+      setSimulatorFocus(buildSimulatorFocusFromResult(item));
+      setRecentView(item.matchedId);
+      renderAll();
+    }
+
+    function openPixelDetail(pixelInfo) {
+      const enriched = enrichPixelDetailItem(pixelInfo);
+      state.detail = { type: "pixel", item: enriched };
+      setSimulatorFocus(buildSimulatorFocusFromPixel(enriched, enriched.displayMode));
+      setRecentView(enriched.matchedColor.id);
+      renderAll();
+    }
+
+    function closeDetailDrawer() {
+      state.detail = null;
+      renderAll();
+    }
+
+    function applyManualOverride() {
+      if (state.detail?.type !== "result") return;
+      const input = document.getElementById("manualOverrideInput");
+      if (!input) return;
+      const paletteId = input.value.trim().toUpperCase();
+      if (!paletteId) {
+        showToast("請先輸入拼豆色號");
+        return;
+      }
+      if (!paletteById[paletteId]) {
+        showToast("找不到這個拼豆色號");
+        return;
+      }
+
+      state.detail.item.sources.forEach((sourceKey) => {
+        state.manualOverrides[sourceKey] = paletteId;
+      });
+      saveState();
+      const refreshed = getResultBySourceKey(state.detail.item.sources[0]);
+      if (refreshed) {
+        state.detail = { type: "result", item: refreshed };
+        state.activeResultKey = refreshed.key;
+        setSimulatorFocus(buildSimulatorFocusFromResult(refreshed));
+      }
+      setRecentView(paletteId);
+      renderAll();
+      showToast(`已指定成 ${paletteId}`);
+    }
+
+    function clearManualOverride() {
+      if (state.detail?.type !== "result") return;
+      state.detail.item.sources.forEach((sourceKey) => {
+        delete state.manualOverrides[sourceKey];
+      });
+      saveState();
+      const refreshed = getResultBySourceKey(state.detail.item.sources[0]);
+      if (refreshed) {
+        state.detail = { type: "result", item: refreshed };
+        state.activeResultKey = refreshed.key;
+        setSimulatorFocus(buildSimulatorFocusFromResult(refreshed));
+      }
+      renderAll();
+      showToast("已清除手動指定");
+    }
+
+    function escapeHtml(text) {
+      return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getImagePixelFromPointer(event) {
+      if (!state.sourceImage) return null;
+      const rect = els.previewCanvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+
+      const x = clamp(Math.floor(((event.clientX - rect.left) / rect.width) * state.sourceImage.width), 0, state.sourceImage.width - 1);
+      const y = clamp(Math.floor(((event.clientY - rect.top) / rect.height) * state.sourceImage.height), 0, state.sourceImage.height - 1);
+      const sourceCtx = state.sourceCanvas.getContext("2d");
+      const data = sourceCtx.getImageData(x, y, 1, 1).data;
+      const rgb = [data[0], data[1], data[2]];
+
+      return {
+        x,
+        y,
+        rgb,
+        hex: rgbToHex(rgb)
+      };
+    }
+
+    function handlePreviewHover(event) {
+      const pixel = getImagePixelFromPointer(event);
+      state.hoverPixel = pixel;
+      renderHoverInspector();
+    }
+
+    function handlePreviewLeave() {
+      state.hoverPixel = null;
+      renderHoverInspector();
+    }
+
+    function handlePreviewClick(event) {
+      const pixel = getImagePixelFromPointer(event);
+      if (!pixel) return;
+      const topCandidates = findTopNearestPaletteColors(pixel.rgb, 3, state.settings.distanceMethod);
+      state.clickedPixel = { ...pixel, topCandidates };
+      renderClickInspector();
+      openPixelDetail(state.clickedPixel);
+    }
+
+    function loadImageFromDataUrl(dataUrl, imageName = "") {
+      return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => {
+          state.sourceImage = image;
+          state.imageDataUrl = dataUrl;
+          state.imageName = imageName;
+          state.sourceCanvas.width = image.width;
+          state.sourceCanvas.height = image.height;
+          state.sourceCanvas.getContext("2d").drawImage(image, 0, 0);
+          resolve(image);
+        };
+        image.onerror = reject;
+        image.src = dataUrl;
+      });
+    }
+
+    async function handleImageFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      const result = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await loadImageFromDataUrl(result, file.name);
+      state.imageDataUrl = createPreviewDataUrl(state.sourceImage);
+      state.clickedPixel = null;
+      state.hoverPixel = null;
+      state.analysis = null;
+      state.activeResultKey = null;
+      state.detail = null;
+      saveState();
+      renderAll();
+      els.imageStatusText.textContent = `已載入圖片：${file.name}。現在可以按「分析圖片」。`;
+    }
+
+    function createSampleCanvasFromSource() {
+      const image = state.sourceImage;
+      const sampleCanvas = document.createElement("canvas");
+      const maxSide = 220;
+      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+      sampleCanvas.width = Math.max(1, Math.round(image.width * scale));
+      sampleCanvas.height = Math.max(1, Math.round(image.height * scale));
+      const ctx = sampleCanvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(image, 0, 0, sampleCanvas.width, sampleCanvas.height);
+      return sampleCanvas;
+    }
+
+    function analyzeImage() {
+      if (!state.sourceImage) return;
+      const sampleCanvas = createSampleCanvasFromSource();
+      const sampleCtx = sampleCanvas.getContext("2d");
+      const sampleImageData = sampleCtx.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height);
+      const settings = getAnalysisSettingsSnapshot();
+      const extracted = extractDominantColors(sampleImageData, settings);
+      state.analysis = {
+        ...extracted,
+        settingsSnapshot: settings
+      };
+      const results = getDisplayedResults();
+      state.activeResultKey = results.length ? results[0].key : null;
+      if (results.length) {
+        setSimulatorFocus(buildSimulatorFocusFromResult(results[0]));
+      } else {
+        setSimulatorFocus(buildDefaultSimulatorFocus());
+      }
+      state.clickedPixel = null;
+      saveState();
+      renderAll();
+      els.imageStatusText.textContent = `分析完成：${state.imageName || "圖片"}。共整理出 ${results.length} 組顏色結果。`;
+      showToast(`分析完成，共整理出 ${results.length} 組顏色結果`);
+    }
+
+    function buildExportRows() {
+      return getDisplayedResults().map((item) => ({
+        rawHex: item.rawHex,
+        rawRgb: formatRgb(item.rawRgb),
+        matchedId: item.matchedId,
+        matchedHex: item.matchedHex,
+        matchedRgb: formatRgb(item.matchedRgb),
+        count: item.count,
+        ratio: round(item.ratio, 6),
+        distance: round(item.distance, 4),
+        top1: item.topCandidates[0] ? `${item.topCandidates[0].id} ${item.topCandidates[0].hex} ${item.topCandidates[0].distance}` : "",
+        top2: item.topCandidates[1] ? `${item.topCandidates[1].id} ${item.topCandidates[1].hex} ${item.topCandidates[1].distance}` : "",
+        top3: item.topCandidates[2] ? `${item.topCandidates[2].id} ${item.topCandidates[2].hex} ${item.topCandidates[2].distance}` : "",
+        manualOverrideId: item.displayType === "raw" ? (item.manualOverrideId || "") : item.sources.map((sourceKey) => state.manualOverrides[sourceKey]).filter(Boolean).join("|")
+      }));
+    }
+
+    function exportJson() {
+      const payload = {
+        generatedAt: new Date().toISOString(),
+        settings: getAnalysisSettingsSnapshot(),
+        results: buildExportRows()
+      };
+      downloadTextFile("perler-hex-analysis.json", JSON.stringify(payload, null, 2), "application/json");
+      showToast("已匯出 JSON");
+    }
+
+    function exportCsv() {
+      const rows = buildExportRows();
+      const headers = Object.keys(rows[0] || {
+        rawHex: "",
+        rawRgb: "",
+        matchedId: "",
+        matchedHex: "",
+        matchedRgb: "",
+        count: "",
+        ratio: "",
+        distance: "",
+        top1: "",
+        top2: "",
+        top3: "",
+        manualOverrideId: ""
+      });
+      const lines = [
+        headers.join(","),
+        ...rows.map((row) => headers.map((header) => `"${String(row[header] ?? "").replaceAll('"', '""')}"`).join(","))
+      ];
+      downloadTextFile("perler-hex-analysis.csv", lines.join("\n"), "text/csv;charset=utf-8");
+      showToast("已匯出 CSV");
+    }
+
+    function exportSwatches() {
+      const rows = getDisplayedResults().map((item, index) => `${index + 1}. ${item.matchedId} ${item.matchedHex} RGB(${formatRgb(item.matchedRgb)}) 使用比例 ${formatRatio(item.ratio)} 色差 ${formatDistance(item.distance)}`);
+      const content = [
+        "拼豆色票清單",
+        `產生時間：${new Date().toLocaleString()}`,
+        `設定：${state.settings.mode === "match" ? "自動匹配拼豆色卡" : "僅顯示原始抓色"} / 上限 ${getCurrentColorLimit()} 色 / ${state.settings.distanceMethod === "deltaE" ? "Delta E" : "RGB"} 距離`,
+        "",
+        ...rows
+      ].join("\n");
+      downloadTextFile("perler-hex-swatches.txt", content, "text/plain;charset=utf-8");
+      showToast("已匯出色票清單");
+    }
+
+    function saveState() {
+      const payload = {
+        settings: state.settings,
+        activeTab: state.activeTab,
+        paletteSearch: state.paletteSearch,
+        recentViews: state.recentViews,
+        imageDataUrl: state.imageDataUrl,
+        imageName: state.imageName,
+        manualOverrides: state.manualOverrides
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    async function restoreState() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      try {
+        const saved = JSON.parse(raw);
+        state.settings = { ...DEFAULT_SETTINGS, ...(saved.settings || {}) };
+        state.activeTab = saved.activeTab === "palette" ? "palette" : "analyze";
+        state.paletteSearch = saved.paletteSearch || "";
+        state.recentViews = Array.isArray(saved.recentViews) ? saved.recentViews.filter((id) => paletteById[id]) : [];
+        state.manualOverrides = Object.fromEntries(
+          Object.entries(saved.manualOverrides || {}).filter(([, paletteId]) => paletteById[paletteId])
+        );
+        syncSettingsInputs();
+        els.paletteSearchInput.value = state.paletteSearch;
+        if (saved.imageDataUrl) {
+          await loadImageFromDataUrl(saved.imageDataUrl, saved.imageName || "最近分析圖片");
+          els.imageStatusText.textContent = `已還原最近一次圖片：${state.imageName || "最近分析圖片"}。`;
+          analyzeImage();
+        }
+      } catch (error) {
+        console.error("Restore state failed:", error);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    function resetState() {
+      state.settings = { ...DEFAULT_SETTINGS };
+      state.activeTab = "analyze";
+      state.paletteSearch = "";
+      state.recentViews = [];
+      state.imageDataUrl = "";
+      state.imageName = "";
+      state.sourceImage = null;
+      state.analysis = null;
+      state.hoverPixel = null;
+      state.clickedPixel = null;
+      state.manualOverrides = {};
+      state.detail = null;
+      state.activeResultKey = null;
+      state.simulatorFocus = null;
+      localStorage.removeItem(STORAGE_KEY);
+      els.imageInput.value = "";
+      els.paletteSearchInput.value = "";
+      els.imageStatusText.textContent = "尚未載入圖片，現在可以先瀏覽下方的 221 色色卡。";
+      syncSettingsInputs();
+      renderAll();
+      showToast("已重設工具與快取");
+    }
+
+    function renderAnalysisSummary() {
+      const results = getDisplayedResults();
+      if (!state.analysis || !results.length) {
+        els.analysisSummaryPill.textContent = "尚未分析";
+        return;
+      }
+      els.analysisSummaryPill.textContent = `${results.length} 色 / ${state.analysis.sampledPixelCount.toLocaleString()} 像素`;
+    }
+
+    function renderAll() {
+      syncSettingsInputs();
+      renderTabs();
+      renderPaletteBrowser();
+      renderRecentViews();
+      renderTop10();
+      renderResults();
+      renderPreview();
+      renderHoverInspector();
+      renderClickInspector();
+      renderAnalysisSummary();
+      renderDetailDrawer();
+      renderTomodachiSimulator();
+    }
+
+    function handleRootClick(event) {
+      const target = event.target.closest("[data-action]");
+      if (!target) return;
+      const { action } = target.dataset;
+
+      if (action === "switch-tab") {
+        setActiveTab(target.dataset.tab);
+        renderAll();
+      }
+      if (action === "copy-hex") {
+        copyText(target.dataset.hex, `已複製 ${target.dataset.hex}`);
+      }
+      if (action === "open-palette") {
+        openPaletteDetail(target.dataset.id);
+      }
+      if (action === "open-result") {
+        openResultDetail(target.dataset.key);
+      }
+      if (action === "highlight-result") {
+        const item = getDisplayedResults().find((result) => result.key === target.dataset.key);
+        if (item) {
+          state.activeResultKey = item.key;
+          setSimulatorFocus(buildSimulatorFocusFromResult(item));
+          renderAll();
+        }
+      }
+      if (action === "apply-manual-override") {
+        applyManualOverride();
+      }
+      if (action === "clear-manual-override") {
+        clearManualOverride();
+      }
+      if (action === "set-pixel-focus-mode" && state.detail?.type === "pixel") {
+        const mode = target.dataset.mode === "matched" ? "matched" : "raw";
+        state.detail.item.displayMode = mode;
+        setSimulatorFocus(buildSimulatorFocusFromPixel(state.detail.item, mode));
+        renderAll();
+      }
+    }
+
+    function bindEvents() {
+      document.body.addEventListener("click", handleRootClick);
+
+      els.imageInput.addEventListener("change", async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          await handleImageFile(file);
+        } catch (error) {
+          console.error(error);
+          showToast("圖片載入失敗，請再試一次");
+        }
+      });
+
+      els.analyzeButton.addEventListener("click", () => {
+        analyzeImage();
+      });
+
+      els.resetButton.addEventListener("click", resetState);
+
+      els.colorLimitSelect.addEventListener("change", (event) => {
+        state.settings.colorLimitMode = event.target.value;
+        els.customColorLimitInput.disabled = state.settings.colorLimitMode !== "custom";
+        saveState();
+        if (state.analysis) analyzeImage();
+        renderAll();
+      });
+
+      els.customColorLimitInput.addEventListener("input", (event) => {
+        state.settings.customColorLimit = clamp(parseInt(event.target.value, 10) || 16, 2, 128);
+        saveState();
+      });
+
+      els.customColorLimitInput.addEventListener("change", () => {
+        if (state.settings.colorLimitMode === "custom" && state.analysis) analyzeImage();
+      });
+
+      els.distanceMethodSelect.addEventListener("change", (event) => {
+        state.settings.distanceMethod = event.target.value;
+        saveState();
+        if (state.analysis) analyzeImage();
+        else renderAll();
+      });
+
+      els.ignoreTransparentCheckbox.addEventListener("change", (event) => {
+        state.settings.ignoreTransparent = event.target.checked;
+        saveState();
+        if (state.analysis) analyzeImage();
+      });
+
+      els.mergeSimilarCheckbox.addEventListener("change", (event) => {
+        state.settings.mergeSimilar = event.target.checked;
+        saveState();
+        if (state.analysis) analyzeImage();
+      });
+
+      els.analysisModeRadios.forEach((radio) => {
+        radio.addEventListener("change", (event) => {
+          if (!event.target.checked) return;
+          state.settings.mode = event.target.value;
+          state.activeResultKey = null;
+          saveState();
+          renderAll();
+        });
+      });
+
+      els.zoomRange.addEventListener("input", (event) => {
+        state.settings.zoom = clamp((parseInt(event.target.value, 10) || 100) / 100, 0.2, 5);
+        els.zoomLabel.textContent = `${Math.round(state.settings.zoom * 100)}%`;
+        renderPreview();
+        saveState();
+      });
+
+      els.paletteSearchInput.addEventListener("input", (event) => {
+        state.paletteSearch = event.target.value;
+        renderPaletteBrowser();
+        saveState();
+      });
+
+      els.exportJsonButton.addEventListener("click", exportJson);
+      els.exportCsvButton.addEventListener("click", exportCsv);
+      els.exportSwatchesButton.addEventListener("click", exportSwatches);
+
+      els.previewCanvas.addEventListener("mousemove", handlePreviewHover);
+      els.previewCanvas.addEventListener("mouseleave", handlePreviewLeave);
+      els.previewCanvas.addEventListener("click", handlePreviewClick);
+
+      els.closeDrawerButton.addEventListener("click", closeDetailDrawer);
+      els.detailOverlay.addEventListener("click", closeDetailDrawer);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeDetailDrawer();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        renderPreview();
+        renderTomodachiSimulator();
+      });
+    }
+
+    async function init() {
+      renderHeroBands();
+      renderPaletteOptions();
+      bindEvents();
+      syncSettingsInputs();
+      renderAll();
+      await restoreState();
+      renderAll();
+    }
+
+    init();
+  </script>
+</body>
+</html>

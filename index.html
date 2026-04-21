@@ -655,6 +655,14 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .preview-mode-row {
+      align-items: stretch;
+    }
+
+    .preview-mode-row .mini-btn {
+      min-width: 0;
+    }
+
     .info-card {
       display: grid;
       gap: 10px;
@@ -1014,6 +1022,83 @@
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
+    }
+
+    .recognition-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .recognition-card {
+      display: grid;
+      gap: 10px;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      text-align: left;
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+
+    .recognition-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 127, 96, 0.28);
+    }
+
+    .recognition-card-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .recognition-card-head .swatch.small {
+      flex: 0 0 auto;
+    }
+
+    .recognition-card-head strong {
+      font-size: 1rem;
+      font-family: var(--header-font);
+    }
+
+    .recognition-card-count {
+      font-size: 1.08rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .recognition-card .tiny {
+      line-height: 1.5;
+    }
+
+    .ocr-preview-list {
+      display: grid;
+      gap: 10px;
+      max-height: 280px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .ocr-preview-row {
+      display: grid;
+      gap: 6px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+    }
+
+    .ocr-preview-row strong {
+      font-size: 0.95rem;
+      color: var(--ink);
+    }
+
+    .ocr-preview-row .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--ink-soft);
+      font-size: 0.84rem;
     }
 
     .empty-state {
@@ -2077,6 +2162,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .recognition-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .color-chip {
         width: 100%;
       }
@@ -2159,6 +2248,10 @@
       .result-actions,
       .top10-strip,
       .recent-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .recognition-grid {
         grid-template-columns: 1fr;
       }
 
@@ -2405,6 +2498,12 @@
             <div class="tiny" id="sampleInfoText">目前沒有圖片。</div>
           </div>
 
+          <div class="toggle-action-row preview-mode-row">
+            <button id="pixelModeButton" type="button" class="mini-btn is-active" data-action="set-preview-mode" data-mode="pixel">像素取樣</button>
+            <button id="cellModeButton" type="button" class="mini-btn" data-action="set-preview-mode" data-mode="cell">格子修正</button>
+          </div>
+          <div class="tiny" id="previewModeText">目前是像素取樣模式，可滑鼠取色與點擊像素候選色。</div>
+
           <div class="preview-shell">
             <div class="preview-stage" id="previewStage">
               <canvas id="previewCanvas"></canvas>
@@ -2425,6 +2524,33 @@
               <h4>點擊候選色</h4>
               <p>點一下圖片後，這裡會顯示最近拼豆色與前 3 名候選色。</p>
             </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-title-row">
+            <div>
+              <h2>色號辨識結果區</h2>
+              <p class="panel-subtitle">優先從格內文字辨識色號；沒有文字的格子才會回退到顏色比對。</p>
+            </div>
+            <span class="pill" id="recognitionSummaryPill">尚未辨識</span>
+          </div>
+
+          <div class="helper-box" id="recognitionStatusBox">上傳拼豆圖後，這裡會顯示辨識狀態、未解析格子數，以及目前是否已進入 OCR / 顏色 fallback 流程。</div>
+
+          <div id="recognizedIdList" class="recognition-grid" style="margin-top: 16px;">
+            <div class="empty-state">分析完成後，這裡會列出本圖使用到的拼豆色號與出現次數。</div>
+          </div>
+
+          <div class="panel-title-row" style="margin-top: 20px; margin-bottom: 12px;">
+            <div>
+              <h3>OCR 辨識預覽</h3>
+              <p class="panel-subtitle">只保留與拼豆色號相關的候選文字，方便檢查 OCR 是否把格內代碼讀對。</p>
+            </div>
+          </div>
+
+          <div id="ocrPreviewList" class="ocr-preview-list">
+            <div class="empty-state">尚未進行 OCR。分析後會顯示原始文字、正規化結果與信心值。</div>
           </div>
         </section>
 
@@ -2719,12 +2845,21 @@
       sourceImage: null,
       sourceCanvas: document.createElement("canvas"),
       analysis: null,
+      chartRecognition: null,
       hoverPixel: null,
       clickedPixel: null,
+      hoverCellKey: null,
       manualOverrides: {},
+      chartManualOverrides: {},
       detail: null,
       activeResultKey: null,
-      simulatorFocus: null
+      simulatorFocus: null,
+      previewInteractionMode: "pixel",
+      isAnalyzing: false,
+      ocrStatusText: "",
+      tesseractScriptPromise: null,
+      tesseractWorker: null,
+      analysisRunId: 0
     };
 
     const els = {
@@ -2752,10 +2887,17 @@
       highlightCanvas: document.getElementById("highlightCanvas"),
       highlightCtx: document.getElementById("highlightCanvas").getContext("2d"),
       emptyPreviewMessage: document.getElementById("emptyPreviewMessage"),
+      pixelModeButton: document.getElementById("pixelModeButton"),
+      cellModeButton: document.getElementById("cellModeButton"),
+      previewModeText: document.getElementById("previewModeText"),
       hoverInspector: document.getElementById("hoverInspector"),
       clickInspector: document.getElementById("clickInspector"),
       analysisSummaryPill: document.getElementById("analysisSummaryPill"),
       top10Colors: document.getElementById("top10Colors"),
+      recognitionSummaryPill: document.getElementById("recognitionSummaryPill"),
+      recognitionStatusBox: document.getElementById("recognitionStatusBox"),
+      recognizedIdList: document.getElementById("recognizedIdList"),
+      ocrPreviewList: document.getElementById("ocrPreviewList"),
       resultsList: document.getElementById("resultsList"),
       exportJsonButton: document.getElementById("exportJsonButton"),
       exportCsvButton: document.getElementById("exportCsvButton"),
@@ -3152,6 +3294,667 @@
       const ctx = previewCanvas.getContext("2d");
       ctx.drawImage(image, 0, 0, previewCanvas.width, previewCanvas.height);
       return previewCanvas.toDataURL("image/png");
+    }
+
+    function sortPaletteIds(a, b) {
+      const groupA = String(a || "")[0] || "";
+      const groupB = String(b || "")[0] || "";
+      const numA = parseInt(String(a || "").slice(1), 10) || 0;
+      const numB = parseInt(String(b || "").slice(1), 10) || 0;
+      return groupA.localeCompare(groupB) || numA - numB;
+    }
+
+    function getCellKey(row, col) {
+      return `cell-r${row}-c${col}`;
+    }
+
+    function median(values) {
+      if (!values.length) return 0;
+      const sorted = [...values].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
+    }
+
+    function normalizeOcrWordText(text) {
+      return String(text || "")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+    }
+
+    function normalizeOcrColorId(text) {
+      const cleaned = normalizeOcrWordText(text);
+      if (!cleaned) return "";
+
+      const letter = cleaned[0] || "";
+      const digitPart = cleaned
+        .slice(1)
+        .replace(/[OQD]/g, "0")
+        .replace(/[IL|]/g, "1")
+        .replace(/Z/g, "2")
+        .replace(/S/g, "5")
+        .replace(/B/g, "8");
+      const normalized = `${letter}${digitPart}`;
+      const candidates = normalized.match(/[A-Z][0-9]{1,2}/g) || [];
+
+      for (const candidate of candidates) {
+        if (paletteById[candidate]) {
+          return candidate;
+        }
+      }
+
+      return paletteById[normalized] ? normalized : "";
+    }
+
+    function getWordBounds(word, scale = 1) {
+      const bbox = word?.bbox || word || {};
+      const x0 = (bbox.x0 ?? bbox.left ?? 0) / scale;
+      const y0 = (bbox.y0 ?? bbox.top ?? 0) / scale;
+      const x1 = (bbox.x1 ?? bbox.right ?? x0) / scale;
+      const y1 = (bbox.y1 ?? bbox.bottom ?? y0) / scale;
+      return {
+        x0,
+        y0,
+        x1,
+        y1,
+        width: Math.max(0, x1 - x0),
+        height: Math.max(0, y1 - y0),
+        centerX: x0 + ((x1 - x0) / 2),
+        centerY: y0 + ((y1 - y0) / 2)
+      };
+    }
+
+    function preprocessBoardForOcr(sourceCanvas) {
+      const scale = clamp(Math.min(2.2, 2200 / Math.max(sourceCanvas.width, sourceCanvas.height)), 1.4, 2.2);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(sourceCanvas.width * scale));
+      canvas.height = Math.max(1, Math.round(sourceCanvas.height * scale));
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const { data } = imageData;
+      for (let index = 0; index < data.length; index += 4) {
+        const alpha = data[index + 3];
+        if (alpha < 16) {
+          data[index] = 255;
+          data[index + 1] = 255;
+          data[index + 2] = 255;
+          data[index + 3] = 255;
+          continue;
+        }
+        const luminance = (data[index] * 0.299) + (data[index + 1] * 0.587) + (data[index + 2] * 0.114);
+        const contrasted = clamp(Math.round(((luminance - 128) * 1.55) + 128), 0, 255);
+        data[index] = contrasted;
+        data[index + 1] = contrasted;
+        data[index + 2] = contrasted;
+        data[index + 3] = 255;
+      }
+      ctx.putImageData(imageData, 0, 0);
+      return { canvas, scale };
+    }
+
+    async function loadTesseract() {
+      if (window.Tesseract?.createWorker) {
+        return window.Tesseract;
+      }
+      if (state.tesseractScriptPromise) {
+        return state.tesseractScriptPromise;
+      }
+
+      state.tesseractScriptPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+        script.async = true;
+        script.crossOrigin = "anonymous";
+        script.onload = () => {
+          if (window.Tesseract?.createWorker) {
+            resolve(window.Tesseract);
+          } else {
+            reject(new Error("Tesseract.js 載入後仍找不到 createWorker"));
+          }
+        };
+        script.onerror = () => reject(new Error("Tesseract.js 載入失敗"));
+        document.head.appendChild(script);
+      });
+
+      return state.tesseractScriptPromise;
+    }
+
+    async function getTesseractWorker() {
+      if (state.tesseractWorker) {
+        return state.tesseractWorker;
+      }
+
+      const Tesseract = await loadTesseract();
+      state.ocrStatusText = "正在建立 OCR worker...";
+      renderRecognitionResults();
+      const worker = await Tesseract.createWorker("eng", 1, {
+        logger: (message) => {
+          if (!message?.status) return;
+          const progressText = typeof message.progress === "number"
+            ? ` ${Math.round(message.progress * 100)}%`
+            : "";
+          state.ocrStatusText = `OCR ${message.status}${progressText}`;
+          renderRecognitionResults();
+        }
+      });
+
+      await worker.setParameters({
+        tessedit_char_whitelist: "ABCDEFGHM0123456789",
+        preserve_interword_spaces: "1",
+        tessedit_pageseg_mode: "11",
+        user_defined_dpi: "150"
+      });
+      state.tesseractWorker = worker;
+      return worker;
+    }
+
+    async function runBoardOcr(canvas) {
+      const worker = await getTesseractWorker();
+      const result = await worker.recognize(canvas);
+      return result?.data?.words || [];
+    }
+
+    function extractOcrPreviewWords(words, scale = 1) {
+      return (words || [])
+        .map((word, index) => {
+          const rawText = String(word?.text || "").trim();
+          if (!rawText) return null;
+          const bounds = getWordBounds(word, scale);
+          const normalizedText = normalizeOcrWordText(rawText);
+          const normalizedId = normalizeOcrColorId(rawText);
+          return {
+            key: `ocr-word-${index + 1}`,
+            rawText,
+            normalizedText,
+            normalizedId,
+            confidence: round(word?.confidence ?? word?.conf ?? 0, 1),
+            bounds
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function clusterItemsByCoordinate(items, accessor, tolerance) {
+      const sorted = [...items].sort((a, b) => accessor(a) - accessor(b));
+      const clusters = [];
+      sorted.forEach((item) => {
+        const value = accessor(item);
+        const lastCluster = clusters[clusters.length - 1];
+        if (!lastCluster || Math.abs(lastCluster.anchor - value) > tolerance) {
+          clusters.push({ items: [item], anchor: value });
+          return;
+        }
+        lastCluster.items.push(item);
+        lastCluster.anchor = lastCluster.items.reduce((sum, entry) => sum + accessor(entry), 0) / lastCluster.items.length;
+      });
+      return clusters;
+    }
+
+    function fitIndexedLine(points) {
+      if (points.length < 2) return null;
+      const meanIndex = points.reduce((sum, point) => sum + point.index, 0) / points.length;
+      const meanCoord = points.reduce((sum, point) => sum + point.coord, 0) / points.length;
+      let numerator = 0;
+      let denominator = 0;
+      points.forEach((point) => {
+        numerator += (point.index - meanIndex) * (point.coord - meanCoord);
+        denominator += (point.index - meanIndex) ** 2;
+      });
+      if (denominator === 0) return null;
+      const step = numerator / denominator;
+      const intercept = meanCoord - (step * meanIndex);
+      return { intercept, step };
+    }
+
+    function selectCoordinateCluster(words, orientation, imageWidth, imageHeight) {
+      const digitWords = words.filter((word) =>
+        /^\d{1,2}$/.test(word.normalizedText) &&
+        word.confidence >= 18
+      );
+      if (digitWords.length < 8) return null;
+
+      const sizeValues = digitWords.map((word) => orientation === "horizontal" ? word.bounds.height : word.bounds.width);
+      const tolerance = Math.max(10, median(sizeValues) * 0.9);
+      const coordinateAccessor = (word) => orientation === "horizontal" ? word.bounds.centerY : word.bounds.centerX;
+      const clusters = clusterItemsByCoordinate(digitWords, coordinateAccessor, tolerance)
+        .map((cluster) => {
+          const deduped = new Map();
+          cluster.items.forEach((word) => {
+            const label = parseInt(word.normalizedText, 10);
+            if (!Number.isFinite(label)) return;
+            const prev = deduped.get(label);
+            if (!prev || prev.confidence < word.confidence) {
+              deduped.set(label, { ...word, label });
+            }
+          });
+          const points = Array.from(deduped.values())
+            .sort((a, b) => orientation === "horizontal"
+              ? a.bounds.centerX - b.bounds.centerX
+              : a.bounds.centerY - b.bounds.centerY);
+          return {
+            anchor: cluster.anchor,
+            points
+          };
+        })
+        .filter((cluster) => cluster.points.length >= 8);
+
+      const filtered = clusters.filter((cluster) => {
+        const position = cluster.anchor;
+        return orientation === "horizontal"
+          ? position < imageHeight * 0.4
+          : position < imageWidth * 0.4;
+      });
+
+      const candidates = filtered.length ? filtered : clusters;
+      candidates.sort((a, b) => b.points.length - a.points.length || a.anchor - b.anchor);
+      return candidates[0] || null;
+    }
+
+    function scoreVerticalLine(imageData, x, top, bottom) {
+      const { data, width, height } = imageData;
+      const clampedX = clamp(Math.round(x), 1, width - 2);
+      const startY = clamp(Math.floor(top), 0, height - 1);
+      const endY = clamp(Math.ceil(bottom), 0, height - 1);
+      let score = 0;
+      let count = 0;
+      for (let y = startY; y <= endY; y += 2) {
+        const center = ((y * width) + clampedX) * 4;
+        const left = center - 4;
+        const right = center + 4;
+        const luminance = (data[center] + data[center + 1] + data[center + 2]) / 3;
+        const leftLum = (data[left] + data[left + 1] + data[left + 2]) / 3;
+        const rightLum = (data[right] + data[right + 1] + data[right + 2]) / 3;
+        score += (255 - luminance) + Math.abs(leftLum - rightLum) * 0.8;
+        count += 1;
+      }
+      return count ? score / count : 0;
+    }
+
+    function scoreHorizontalLine(imageData, y, left, right) {
+      const { data, width, height } = imageData;
+      const clampedY = clamp(Math.round(y), 1, height - 2);
+      const startX = clamp(Math.floor(left), 0, width - 1);
+      const endX = clamp(Math.ceil(right), 0, width - 1);
+      let score = 0;
+      let count = 0;
+      for (let x = startX; x <= endX; x += 2) {
+        const center = ((clampedY * width) + x) * 4;
+        const up = center - (width * 4);
+        const down = center + (width * 4);
+        const luminance = (data[center] + data[center + 1] + data[center + 2]) / 3;
+        const upLum = (data[up] + data[up + 1] + data[up + 2]) / 3;
+        const downLum = (data[down] + data[down + 1] + data[down + 2]) / 3;
+        score += (255 - luminance) + Math.abs(upLum - downLum) * 0.8;
+        count += 1;
+      }
+      return count ? score / count : 0;
+    }
+
+    function snapPredictedLines(predictedLines, scoreFn, searchRadius) {
+      return predictedLines.map((line) => {
+        let best = line;
+        let bestScore = Number.NEGATIVE_INFINITY;
+        for (let offset = -searchRadius; offset <= searchRadius; offset += 1) {
+          const candidate = line + offset;
+          const score = scoreFn(candidate);
+          if (score > bestScore) {
+            best = candidate;
+            bestScore = score;
+          }
+        }
+        return best;
+      });
+    }
+
+    function detectChartGrid(sourceCanvas, ocrWords) {
+      const imageWidth = sourceCanvas.width;
+      const imageHeight = sourceCanvas.height;
+      const topCluster = selectCoordinateCluster(ocrWords, "horizontal", imageWidth, imageHeight);
+      const leftCluster = selectCoordinateCluster(ocrWords, "vertical", imageWidth, imageHeight);
+      if (!topCluster || !leftCluster) return null;
+
+      const topFit = fitIndexedLine(topCluster.points.map((word) => ({
+        index: word.label - 1,
+        coord: word.bounds.centerX
+      })));
+      const leftFit = fitIndexedLine(leftCluster.points.map((word) => ({
+        index: word.label - 1,
+        coord: word.bounds.centerY
+      })));
+      if (!topFit || !leftFit) return null;
+
+      const columns = Math.max(...topCluster.points.map((word) => word.label));
+      const rows = Math.max(...leftCluster.points.map((word) => word.label));
+      if (columns < 6 || rows < 6 || topFit.step < 6 || leftFit.step < 6) return null;
+
+      const predictedColumnLines = Array.from({ length: columns + 1 }, (_, index) =>
+        topFit.intercept + ((index - 0.5) * topFit.step)
+      );
+      const predictedRowLines = Array.from({ length: rows + 1 }, (_, index) =>
+        leftFit.intercept + ((index - 0.5) * leftFit.step)
+      );
+
+      const ctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+      const imageData = ctx.getImageData(0, 0, imageWidth, imageHeight);
+      const searchRadiusX = Math.max(2, Math.round(topFit.step * 0.22));
+      const searchRadiusY = Math.max(2, Math.round(leftFit.step * 0.22));
+      const columnLines = snapPredictedLines(
+        predictedColumnLines,
+        (candidate) => scoreVerticalLine(imageData, candidate, predictedRowLines[0], predictedRowLines[predictedRowLines.length - 1]),
+        searchRadiusX
+      );
+      const rowLines = snapPredictedLines(
+        predictedRowLines,
+        (candidate) => scoreHorizontalLine(imageData, candidate, predictedColumnLines[0], predictedColumnLines[predictedColumnLines.length - 1]),
+        searchRadiusY
+      );
+
+      return {
+        left: columnLines[0],
+        top: rowLines[0],
+        right: columnLines[columnLines.length - 1],
+        bottom: rowLines[rowLines.length - 1],
+        columns,
+        rows,
+        cellWidth: median(columnLines.slice(1).map((line, index) => line - columnLines[index])),
+        cellHeight: median(rowLines.slice(1).map((line, index) => line - rowLines[index])),
+        columnLines,
+        rowLines
+      };
+    }
+
+    function locateIndexInLines(value, lines) {
+      for (let index = 0; index < lines.length - 1; index += 1) {
+        if (value >= lines[index] && value <= lines[index + 1]) {
+          return index + 1;
+        }
+      }
+      return -1;
+    }
+
+    function createGridCells(grid) {
+      const cells = [];
+      for (let row = 1; row <= grid.rows; row += 1) {
+        for (let col = 1; col <= grid.columns; col += 1) {
+          const x0 = grid.columnLines[col - 1];
+          const y0 = grid.rowLines[row - 1];
+          const x1 = grid.columnLines[col];
+          const y1 = grid.rowLines[row];
+          cells.push({
+            key: getCellKey(row, col),
+            row,
+            col,
+            bounds: {
+              x0,
+              y0,
+              x1,
+              y1,
+              width: Math.max(1, x1 - x0),
+              height: Math.max(1, y1 - y0)
+            },
+            words: [],
+            rawText: "",
+            normalizedId: "",
+            source: "",
+            confidence: 0,
+            manualOverrideId: ""
+          });
+        }
+      }
+      return cells;
+    }
+
+    function sampleCellRepresentativeColor(cell, sourceCanvas) {
+      const ctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+      const insetX = Math.max(1, Math.round(cell.bounds.width * 0.16));
+      const insetY = Math.max(1, Math.round(cell.bounds.height * 0.16));
+      const sx = clamp(Math.round(cell.bounds.x0 + insetX), 0, sourceCanvas.width - 1);
+      const sy = clamp(Math.round(cell.bounds.y0 + insetY), 0, sourceCanvas.height - 1);
+      const sw = clamp(Math.round(cell.bounds.width - (insetX * 2)), 1, sourceCanvas.width - sx);
+      const sh = clamp(Math.round(cell.bounds.height - (insetY * 2)), 1, sourceCanvas.height - sy);
+      const imageData = ctx.getImageData(sx, sy, sw, sh).data;
+      const samples = [];
+      const step = Math.max(1, Math.floor(Math.min(sw, sh) / 10));
+
+      for (let y = 0; y < sh; y += step) {
+        for (let x = 0; x < sw; x += step) {
+          const offset = ((y * sw) + x) * 4;
+          const alpha = imageData[offset + 3];
+          if (alpha < 16) continue;
+          const rgb = {
+            r: imageData[offset],
+            g: imageData[offset + 1],
+            b: imageData[offset + 2]
+          };
+          samples.push({
+            ...rgb,
+            luminance: (rgb.r * 0.299) + (rgb.g * 0.587) + (rgb.b * 0.114)
+          });
+        }
+      }
+
+      if (!samples.length) return { r: 255, g: 255, b: 255 };
+      const sorted = samples.sort((a, b) => a.luminance - b.luminance);
+      const start = Math.floor(sorted.length * 0.18);
+      const end = Math.max(start + 1, Math.ceil(sorted.length * 0.88));
+      const usable = sorted.slice(start, end);
+      return weightedAverageRgb(usable);
+    }
+
+    function estimateEmptyBoardColor(cells, sourceCanvas, grid) {
+      const cornerCandidates = cells.filter((cell) => (
+        (cell.row <= 2 || cell.row >= grid.rows - 1) &&
+        (cell.col <= 2 || cell.col >= grid.columns - 1) &&
+        !cell.words.length
+      )).slice(0, 12);
+
+      if (!cornerCandidates.length) {
+        return { r: 255, g: 255, b: 255 };
+      }
+
+      return weightedAverageRgb(cornerCandidates.map((cell) => ({
+        rgb: sampleCellRepresentativeColor(cell, sourceCanvas)
+      })));
+    }
+
+    function fallbackAssignCellByColor(cell, sourceCanvas) {
+      const sampledRgb = sampleCellRepresentativeColor(cell, sourceCanvas);
+      const nearest = findNearestPaletteColor(sampledRgb, state.settings.distanceMethod);
+      return {
+        rgb: sampledRgb,
+        matchedId: nearest?.id || "",
+        confidence: nearest ? Math.max(0, round(100 - nearest.distance, 1)) : 0
+      };
+    }
+
+    function assignCellsWithOcrFirst(grid, ocrWords, sourceCanvas) {
+      const cells = createGridCells(grid);
+      const cellMap = new Map(cells.map((cell) => [cell.key, cell]));
+
+      ocrWords.forEach((word) => {
+        const centerX = word.bounds.centerX;
+        const centerY = word.bounds.centerY;
+        if (
+          centerX < grid.left ||
+          centerX > grid.right ||
+          centerY < grid.top ||
+          centerY > grid.bottom
+        ) {
+          return;
+        }
+        const col = locateIndexInLines(centerX, grid.columnLines);
+        const row = locateIndexInLines(centerY, grid.rowLines);
+        if (row === -1 || col === -1) return;
+        const cell = cellMap.get(getCellKey(row, col));
+        if (cell) {
+          cell.words.push(word);
+        }
+      });
+
+      cells.forEach((cell) => {
+        cell.manualOverrideId = state.chartManualOverrides[cell.key] || "";
+        if (!cell.words.length) return;
+        const validWords = cell.words
+          .map((word) => ({
+            ...word,
+            normalizedId: normalizeOcrColorId(word.rawText)
+          }))
+          .filter((word) => word.normalizedId);
+
+        if (validWords.length) {
+          validWords.sort((a, b) => b.confidence - a.confidence);
+          const best = validWords[0];
+          cell.rawText = best.rawText;
+          cell.normalizedId = best.normalizedId;
+          cell.source = "ocr";
+          cell.confidence = best.confidence;
+          return;
+        }
+
+        const fallbackWord = [...cell.words].sort((a, b) => b.confidence - a.confidence)[0];
+        cell.rawText = fallbackWord.rawText;
+        cell.source = "";
+        cell.confidence = fallbackWord.confidence;
+      });
+
+      const validOcrCells = cells.filter((cell) => cell.source === "ocr" && cell.normalizedId);
+      if (validOcrCells.length < 8) {
+        return { cells, unresolvedCells: [], emptyBackgroundRgb: { r: 255, g: 255, b: 255 } };
+      }
+
+      const rowMin = Math.min(...validOcrCells.map((cell) => cell.row));
+      const rowMax = Math.max(...validOcrCells.map((cell) => cell.row));
+      const colMin = Math.min(...validOcrCells.map((cell) => cell.col));
+      const colMax = Math.max(...validOcrCells.map((cell) => cell.col));
+      const emptyBackgroundRgb = estimateEmptyBoardColor(cells, sourceCanvas, grid);
+
+      cells.forEach((cell) => {
+        if (cell.words.length || cell.normalizedId) return;
+        const inRecognizedRange = (
+          cell.row >= rowMin - 1 &&
+          cell.row <= rowMax + 1 &&
+          cell.col >= colMin - 1 &&
+          cell.col <= colMax + 1
+        );
+        if (!inRecognizedRange) return;
+
+        const hasActiveNeighbor = cells.some((other) =>
+          other.normalizedId &&
+          Math.abs(other.row - cell.row) <= 1 &&
+          Math.abs(other.col - cell.col) <= 1 &&
+          !(other.row === cell.row && other.col === cell.col)
+        );
+        const fallback = fallbackAssignCellByColor(cell, sourceCanvas);
+        const backgroundDistance = rgbDistance(fallback.rgb, emptyBackgroundRgb);
+        if (!hasActiveNeighbor && backgroundDistance < 22) {
+          return;
+        }
+
+        if (fallback.matchedId) {
+          cell.rawText = "";
+          cell.normalizedId = fallback.matchedId;
+          cell.source = "color-fallback";
+          cell.confidence = fallback.confidence;
+        }
+      });
+
+      const unresolvedCells = cells.filter((cell) =>
+        cell.words.length &&
+        !cell.normalizedId &&
+        !cell.manualOverrideId
+      );
+
+      return {
+        cells,
+        unresolvedCells,
+        emptyBackgroundRgb
+      };
+    }
+
+    function getResolvedCellAssignment(cell) {
+      const manualId = cell.manualOverrideId || state.chartManualOverrides[cell.key];
+      if (manualId && paletteById[manualId]) {
+        return {
+          id: manualId,
+          palette: paletteById[manualId],
+          source: "manual"
+        };
+      }
+      if (cell.normalizedId && paletteById[cell.normalizedId]) {
+        return {
+          id: cell.normalizedId,
+          palette: paletteById[cell.normalizedId],
+          source: cell.source
+        };
+      }
+      return null;
+    }
+
+    function buildRecognizedIdSummary(cells) {
+      const map = new Map();
+      cells.forEach((cell) => {
+        const resolved = getResolvedCellAssignment(cell);
+        if (!resolved) return;
+        const entry = map.get(resolved.id) || {
+          id: resolved.id,
+          count: 0,
+          sourceCounts: { ocr: 0, "color-fallback": 0, manual: 0 },
+          hex: resolved.palette.hex,
+          rgb: resolved.palette.rgb
+        };
+        entry.count += 1;
+        entry.sourceCounts[resolved.source] = (entry.sourceCounts[resolved.source] || 0) + 1;
+        map.set(resolved.id, entry);
+      });
+
+      return Array.from(map.values())
+        .sort((a, b) => sortPaletteIds(a.id, b.id));
+    }
+
+    function refreshChartRecognitionDerivedData() {
+      if (!state.chartRecognition) return;
+      state.chartRecognition.cells.forEach((cell) => {
+        cell.manualOverrideId = state.chartManualOverrides[cell.key] || "";
+      });
+      state.chartRecognition.summary = buildRecognizedIdSummary(state.chartRecognition.cells);
+      state.chartRecognition.unresolvedCells = state.chartRecognition.cells.filter((cell) =>
+        cell.words.length &&
+        !getResolvedCellAssignment(cell)
+      );
+    }
+
+    async function recognizeChartColorsFromImage() {
+      state.ocrStatusText = "正在準備 OCR...";
+      renderRecognitionResults();
+      const processed = preprocessBoardForOcr(state.sourceCanvas);
+      const rawWords = await runBoardOcr(processed.canvas);
+      const ocrPreview = extractOcrPreviewWords(rawWords, processed.scale);
+      const grid = detectChartGrid(state.sourceCanvas, ocrPreview);
+      if (!grid) {
+        return null;
+      }
+
+      const { cells, unresolvedCells, emptyBackgroundRgb } = assignCellsWithOcrFirst(grid, ocrPreview, state.sourceCanvas);
+      if (cells.filter((cell) => cell.normalizedId).length < 8) {
+        return null;
+      }
+
+      const chartRecognition = {
+        grid,
+        cells,
+        summary: [],
+        ocrPreview,
+        unresolvedCells,
+        emptyBackgroundRgb
+      };
+      state.chartRecognition = chartRecognition;
+      refreshChartRecognitionDerivedData();
+      return chartRecognition;
     }
 
     function getCurrentColorLimit() {
@@ -3791,6 +4594,25 @@
     }
 
     function renderTop10() {
+      const recognizedTop = state.chartRecognition?.summary?.slice(0, 10) || [];
+      if (recognizedTop.length) {
+        const totalCells = state.chartRecognition.cells
+          .filter((cell) => getResolvedCellAssignment(cell))
+          .length || 1;
+        els.top10Colors.innerHTML = recognizedTop.map((item) => `
+          <div class="color-chip">
+            <button type="button" data-action="open-palette" data-id="${item.id}">
+              <span class="swatch small" style="background:${item.hex}"></span>
+              <span class="meta">
+                <strong>${item.id}</strong>
+                <span>${item.count} 格 / ${formatRatio(item.count / totalCells)}</span>
+              </span>
+            </button>
+          </div>
+        `).join("");
+        return;
+      }
+
       const results = getDisplayedResults().slice(0, 10);
       if (!results.length) {
         els.top10Colors.innerHTML = `<div class="empty-state">還沒有分析結果。上傳圖片後，這裡會列出最常用前 10 色。</div>`;
@@ -3808,6 +4630,106 @@
           </button>
         </div>
       `).join("");
+    }
+
+    function renderPreviewModeControls() {
+      const hasRecognition = Boolean(state.chartRecognition?.cells?.length);
+      if (state.previewInteractionMode === "cell" && !hasRecognition) {
+        state.previewInteractionMode = "pixel";
+      }
+
+      els.pixelModeButton.classList.toggle("is-active", state.previewInteractionMode === "pixel");
+      els.cellModeButton.classList.toggle("is-active", state.previewInteractionMode === "cell");
+      els.pixelModeButton.disabled = !state.sourceImage;
+      els.cellModeButton.disabled = !hasRecognition;
+      els.pixelModeButton.setAttribute("aria-pressed", String(state.previewInteractionMode === "pixel"));
+      els.cellModeButton.setAttribute("aria-pressed", String(state.previewInteractionMode === "cell"));
+
+      if (!state.sourceImage) {
+        els.previewModeText.textContent = "先上傳圖片後，再選擇像素取樣或格子修正。";
+        return;
+      }
+
+      if (!hasRecognition) {
+        els.previewModeText.textContent = "目前可用像素取樣。若這張圖有規則格線與色號，分析後會自動開啟格子修正模式。";
+        return;
+      }
+
+      els.previewModeText.textContent = state.previewInteractionMode === "cell"
+        ? "目前是格子修正模式：點格子可查看 OCR / 回退來源，並手動指定色號。"
+        : "目前是像素取樣模式：移動滑鼠看當前像素，點擊可看候選拼豆色。";
+    }
+
+    function renderRecognitionResults() {
+      const recognition = state.chartRecognition;
+      const previewWords = recognition?.ocrPreview || [];
+
+      if (!state.sourceImage) {
+        els.recognitionSummaryPill.textContent = "尚未辨識";
+        els.recognitionStatusBox.innerHTML = `<div class="empty-state">上傳拼豆圖後，這裡會先顯示色號辨識結果，再補上沒有文字的顏色回退結果。</div>`;
+        els.recognizedIdList.innerHTML = `<div class="empty-state">尚未有可辨識的色號。</div>`;
+        els.ocrPreviewList.innerHTML = `<div class="empty-state">OCR 預覽會顯示在這裡。</div>`;
+        return;
+      }
+
+      if (state.isAnalyzing) {
+        els.recognitionSummaryPill.textContent = "辨識中";
+      } else if (recognition?.summary?.length) {
+        els.recognitionSummaryPill.textContent = `${recognition.summary.length} 色號`;
+      } else {
+        els.recognitionSummaryPill.textContent = "未建立色號層";
+      }
+
+      const unresolvedCount = recognition?.unresolvedCells?.length || 0;
+      const recognizedCount = recognition?.cells?.filter((cell) => getResolvedCellAssignment(cell)).length || 0;
+      const statusText = state.ocrStatusText || (
+        recognition
+          ? `已建立格子辨識圖層。成功辨識 ${recognizedCount} 格，待手動修正 ${unresolvedCount} 格。`
+          : "這張圖目前沒有建立出可用的格子辨識圖層，已保留一般顏色分析結果。"
+      );
+      els.recognitionStatusBox.innerHTML = `<p>${escapeHtml(statusText)}</p>`;
+
+      if (recognition?.summary?.length) {
+        els.recognizedIdList.innerHTML = recognition.summary.map((entry) => `
+          <article class="recognition-card">
+            <div class="recognition-card-head">
+              <div class="swatch-line">
+                <span class="swatch small" style="background:${entry.hex}"></span>
+                <div>
+                  <strong>${entry.id}</strong>
+                  <div class="mono">${entry.hex}</div>
+                </div>
+              </div>
+              <span class="recognition-card-count">${entry.count} 格</span>
+            </div>
+            <div class="tiny">OCR ${entry.sourceCounts.ocr || 0} / 顏色回退 ${entry.sourceCounts["color-fallback"] || 0} / 手動 ${entry.sourceCounts.manual || 0}</div>
+            <div class="result-actions">
+              <button type="button" class="mini-btn" data-action="open-palette" data-id="${entry.id}">查看色卡</button>
+              <button type="button" class="mini-btn" data-action="copy-hex" data-hex="${entry.hex}">複製 HEX</button>
+            </div>
+          </article>
+        `).join("");
+      } else {
+        els.recognizedIdList.innerHTML = `<div class="empty-state">目前沒有成功辨識出符合拼豆色號格式的內容。</div>`;
+      }
+
+      if (previewWords.length) {
+        els.ocrPreviewList.innerHTML = previewWords
+          .slice(0, 120)
+          .map((word) => {
+            const normalized = normalizeOcrColorId(word.rawText);
+            return `
+              <div class="ocr-preview-row">
+                <strong>${escapeHtml(word.rawText || "(空白)")}</strong>
+                <span>${normalized ? `正規化：${normalized}` : "未命中色號"}</span>
+                <span>信心 ${round(word.confidence, 1)}%</span>
+              </div>
+            `;
+          })
+          .join("");
+      } else {
+        els.ocrPreviewList.innerHTML = `<div class="empty-state">${state.isAnalyzing ? "正在整理 OCR 預覽..." : "還沒有 OCR 預覽內容。"}</div>`;
+      }
     }
 
     function renderResults() {
@@ -3866,6 +4788,39 @@
     }
 
     function renderHoverInspector() {
+      if (state.previewInteractionMode === "cell") {
+        if (!state.chartRecognition) {
+          els.hoverInspector.innerHTML = `
+            <h4>格子預覽</h4>
+            <p>這張圖目前沒有建立出格子辨識圖層，請先分析有規則格線與色號的拼豆圖。</p>
+          `;
+          return;
+        }
+
+        const cell = getChartCellByKey(state.hoverCellKey);
+        if (!cell) {
+          els.hoverInspector.innerHTML = `
+            <h4>格子預覽</h4>
+            <p>移到圖片格子上時，這裡會顯示該格目前採用的色號、來源與座標。</p>
+          `;
+          return;
+        }
+
+        const resolved = getResolvedCellAssignment(cell);
+        els.hoverInspector.innerHTML = `
+          <h4>格子預覽</h4>
+          <div class="swatch-line">
+            <span class="swatch small" style="background:${resolved?.palette?.hex || "#ffffff"}"></span>
+            <div>
+              <div><strong>${cell.key}</strong>${resolved ? ` / ${resolved.id}` : " / 未決定"}</div>
+              <div class="tiny">${cell.rawText ? `OCR：${escapeHtml(cell.rawText)}` : "這格目前沒有抓到文字"}</div>
+            </div>
+          </div>
+          <p>${resolved ? `來源：${resolved.source === "ocr" ? "OCR" : resolved.source === "manual" ? "手動指定" : "顏色回退"}` : "目前尚未有有效色號，可點一下進行手動修正。"}${cell.confidence ? ` / 信心 ${round(cell.confidence, 1)}%` : ""}</p>
+        `;
+        return;
+      }
+
       if (!state.hoverPixel) {
         els.hoverInspector.innerHTML = `
           <h4>滑鼠取色</h4>
@@ -3889,6 +4844,41 @@
     }
 
     function renderClickInspector() {
+      if (state.previewInteractionMode === "cell") {
+        if (!state.chartRecognition) {
+          els.clickInspector.innerHTML = `
+            <h4>格子修正</h4>
+            <p>這張圖目前沒有可用的格子辨識結果。</p>
+          `;
+          return;
+        }
+
+        const cell = state.detail?.type === "cell"
+          ? getChartCellByKey(state.detail.key)
+          : null;
+        if (!cell) {
+          els.clickInspector.innerHTML = `
+            <h4>格子修正</h4>
+            <p>點一下某一格後，這裡會顯示它的 OCR 結果、是否走顏色回退，並可開啟手動修正。</p>
+          `;
+          return;
+        }
+
+        const resolved = getResolvedCellAssignment(cell);
+        els.clickInspector.innerHTML = `
+          <h4>格子修正</h4>
+          <div class="swatch-line">
+            <span class="swatch small" style="background:${resolved?.palette?.hex || "#ffffff"}"></span>
+            <div>
+              <div><strong>${cell.key}</strong>${resolved ? ` / ${resolved.id}` : " / 未決定"}</div>
+              <div class="tiny">${cell.rawText ? `OCR：${escapeHtml(cell.rawText)}` : "這格沒有辨識到文字"}</div>
+            </div>
+          </div>
+          <div class="tiny">${resolved ? `來源：${resolved.source === "ocr" ? "OCR" : resolved.source === "manual" ? "手動指定" : "顏色回退"}` : "目前等待手動修正"}${cell.confidence ? ` / 信心 ${round(cell.confidence, 1)}%` : ""}</div>
+        `;
+        return;
+      }
+
       if (!state.clickedPixel) {
         els.clickInspector.innerHTML = `
           <h4>點擊候選色</h4>
@@ -3970,44 +4960,83 @@
       const canvas = els.highlightCanvas;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (!state.analysis || !state.activeResultKey) {
+      if (state.analysis && state.activeResultKey) {
+        const displayItem = getDisplayedResults().find((item) => item.key === state.activeResultKey);
+        if (displayItem) {
+          const clusterIndexes = new Set(
+            displayItem.sources
+              .map((sourceKey) => state.analysis.rawResults.findIndex((item) => item.key === sourceKey))
+              .filter((index) => index >= 0)
+          );
+          if (clusterIndexes.size) {
+            const maskCanvas = document.createElement("canvas");
+            maskCanvas.width = state.analysis.sampleWidth;
+            maskCanvas.height = state.analysis.sampleHeight;
+            const maskCtx = maskCanvas.getContext("2d");
+            const maskImage = maskCtx.createImageData(maskCanvas.width, maskCanvas.height);
+
+            for (let index = 0; index < state.analysis.pixelAssignments.length; index += 1) {
+              const clusterIndex = state.analysis.pixelAssignments[index];
+              if (!clusterIndexes.has(clusterIndex)) continue;
+              const offset = index * 4;
+              maskImage.data[offset] = 255;
+              maskImage.data[offset + 1] = 255;
+              maskImage.data[offset + 2] = 255;
+              maskImage.data[offset + 3] = 255;
+            }
+
+            maskCtx.putImageData(maskImage, 0, 0);
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = "source-in";
+            ctx.fillStyle = "rgba(255, 127, 96, 0.34)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+          }
+        }
+      }
+
+      if (!state.chartRecognition?.grid) {
         return;
       }
 
-      const displayItem = getDisplayedResults().find((item) => item.key === state.activeResultKey);
-      if (!displayItem) return;
+      const hoveredCell = getChartCellByKey(state.hoverCellKey);
+      const detailCell = state.detail?.type === "cell"
+        ? getChartCellByKey(state.detail.key)
+        : null;
+      const scaleX = canvas.width / state.sourceImage.width;
+      const scaleY = canvas.height / state.sourceImage.height;
 
-      const clusterIndexes = new Set(
-        displayItem.sources
-          .map((sourceKey) => state.analysis.rawResults.findIndex((item) => item.key === sourceKey))
-          .filter((index) => index >= 0)
-      );
-      if (!clusterIndexes.size) return;
+      const drawCellOutline = (cell, style = {}) => {
+        if (!cell) return;
+        const x = Math.round(cell.bounds.x0 * scaleX);
+        const y = Math.round(cell.bounds.y0 * scaleY);
+        const w = Math.max(1, Math.round(cell.bounds.width * scaleX));
+        const h = Math.max(1, Math.round(cell.bounds.height * scaleY));
+        ctx.save();
+        if (style.fill) {
+          ctx.fillStyle = style.fill;
+          ctx.fillRect(x, y, w, h);
+        }
+        ctx.strokeStyle = style.stroke || "rgba(232, 156, 169, 0.95)";
+        ctx.lineWidth = style.lineWidth || 2;
+        if (style.dashed) ctx.setLineDash([6, 4]);
+        ctx.strokeRect(x + 0.5, y + 0.5, Math.max(1, w - 1), Math.max(1, h - 1));
+        ctx.restore();
+      };
 
-      const maskCanvas = document.createElement("canvas");
-      maskCanvas.width = state.analysis.sampleWidth;
-      maskCanvas.height = state.analysis.sampleHeight;
-      const maskCtx = maskCanvas.getContext("2d");
-      const maskImage = maskCtx.createImageData(maskCanvas.width, maskCanvas.height);
-
-      for (let index = 0; index < state.analysis.pixelAssignments.length; index += 1) {
-        const clusterIndex = state.analysis.pixelAssignments[index];
-        if (!clusterIndexes.has(clusterIndex)) continue;
-        const offset = index * 4;
-        maskImage.data[offset] = 255;
-        maskImage.data[offset + 1] = 255;
-        maskImage.data[offset + 2] = 255;
-        maskImage.data[offset + 3] = 255;
-      }
-
-      maskCtx.putImageData(maskImage, 0, 0);
-      ctx.save();
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
-      ctx.globalCompositeOperation = "source-in";
-      ctx.fillStyle = "rgba(255, 127, 96, 0.34)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.restore();
+      drawCellOutline(hoveredCell, {
+        stroke: "rgba(232, 156, 169, 0.92)",
+        fill: "rgba(232, 156, 169, 0.08)",
+        dashed: true,
+        lineWidth: 2
+      });
+      drawCellOutline(detailCell, {
+        stroke: "rgba(73, 76, 70, 0.92)",
+        fill: "rgba(232, 156, 169, 0.14)",
+        lineWidth: 2.6
+      });
     }
 
     function simulateTomodachiPaletteColor(hue, xNorm, yNorm) {
@@ -4275,6 +5304,35 @@
       `;
     }
 
+    function buildSingleColorSimulatorSection(prefix, title) {
+      return `
+        <div class="detail-simulator">
+          <div class="canvas-label">
+            <span>${title}</span>
+          </div>
+          <canvas id="${prefix}TomodachiPaletteCanvas" class="palette-canvas" width="560" height="315" aria-label="${title}上方大色盤"></canvas>
+          <canvas id="${prefix}TomodachiHueCanvas" class="hue-canvas" width="560" height="70" aria-label="${title}底部色相條"></canvas>
+          <div id="${prefix}TomodachiLegend" class="simulator-legend"></div>
+        </div>
+      `;
+    }
+
+    function renderSingleColorDetailSimulator(prefix, descriptor, sourceLabel) {
+      const paletteCanvas = document.getElementById(`${prefix}TomodachiPaletteCanvas`);
+      const hueCanvas = document.getElementById(`${prefix}TomodachiHueCanvas`);
+      const legend = document.getElementById(`${prefix}TomodachiLegend`);
+      if (!paletteCanvas || !hueCanvas || !legend) return;
+
+      const focus = createSimulatorFocus({
+        sourceType: "detail",
+        sourceLabel,
+        primary: descriptor
+      });
+
+      renderTomodachiCanvasSet(paletteCanvas, hueCanvas, focus, { compact: true });
+      renderTomodachiLegend(legend, focus);
+    }
+
     function renderPixelDetailSimulator(item) {
       const paletteCanvas = document.getElementById("detailTomodachiPaletteCanvas");
       const hueCanvas = document.getElementById("detailTomodachiHueCanvas");
@@ -4350,10 +5408,20 @@
             <span>底部色相條：${mapped.hueSliderX}% / 上方色盤 X：${mapped.paletteX}% / Y：${mapped.paletteY}%</span>
             <span>${describeTomodachiPalettePosition(item.rgb)}</span>
           </div>
+          ${buildSingleColorSimulatorSection("paletteDetail", "這個拼豆色在朋友收集色盤的位置")}
           <div class="result-actions">
             <button type="button" class="secondary-btn" data-action="copy-hex" data-hex="${item.hex}">複製 HEX</button>
           </div>
         `;
+        renderSingleColorDetailSimulator(
+          "paletteDetail",
+          createSimulatorColorDescriptor(item.rgb, {
+            id: item.id,
+            label: `${item.id} ${item.hex}`,
+            hex: item.hex
+          }),
+          `目前定位：${item.id}`
+        );
       }
 
       if (detail.type === "result") {
@@ -4445,6 +5513,68 @@
         renderPixelDetailSimulator(item);
       }
 
+      if (detail.type === "cell") {
+        const cell = getChartCellByKey(detail.key);
+        if (!cell) {
+          els.drawerTitle.textContent = "格子詳情";
+          els.drawerSubtitle.textContent = "找不到這個格子。";
+          els.drawerContent.innerHTML = `<div class="empty-state">這格可能已經不存在，請重新分析圖片。</div>`;
+          return;
+        }
+
+        const resolved = getResolvedCellAssignment(cell);
+        const sample = getCellRepresentativeInfo(cell);
+        const matchedPalette = resolved?.palette || (sample?.nearest ? paletteById[sample.nearest.id] : null);
+        const sourceLabel = resolved?.source === "ocr"
+          ? "OCR"
+          : resolved?.source === "manual"
+            ? "手動指定"
+            : resolved?.source === "color-fallback"
+              ? "顏色回退"
+              : "未決定";
+        const mapped = matchedPalette ? mapColorToTomodachiPalette(matchedPalette.rgb) : null;
+        els.drawerTitle.textContent = `格子詳情：${cell.key}`;
+        els.drawerSubtitle.textContent = `第 ${cell.row} 列 / 第 ${cell.col} 欄`;
+        els.drawerContent.innerHTML = `
+          <div class="big-swatch" style="background:${matchedPalette?.hex || sample?.hex || "#ffffff"}"></div>
+          <div class="detail-grid">
+            <div class="detail-item"><strong>目前採用色號</strong><span>${resolved?.id || "未決定"}</span></div>
+            <div class="detail-item"><strong>來源</strong><span>${sourceLabel}</span></div>
+            <div class="detail-item"><strong>OCR 原始文字</strong><span>${cell.rawText ? escapeHtml(cell.rawText) : "未辨識到文字"}</span></div>
+            <div class="detail-item"><strong>OCR 信心</strong><span>${cell.confidence ? `${round(cell.confidence, 1)}%` : "—"}</span></div>
+            <div class="detail-item"><strong>代表色 HEX</strong><span class="mono">${sample?.hex || "—"}</span></div>
+            <div class="detail-item"><strong>代表色 RGB</strong><span>${sample ? formatRgb(sample.rgb) : "—"}</span></div>
+            <div class="detail-item"><strong>對應拼豆 HEX</strong><span class="mono">${matchedPalette?.hex || "—"}</span></div>
+            <div class="detail-item"><strong>對應拼豆 RGB</strong><span>${matchedPalette ? formatRgb(matchedPalette.rgb) : "—"}</span></div>
+          </div>
+          <div class="helper-box">${sample ? describeHexPosition(sample.rgb) : "這格目前沒有足夠的顏色資訊。"}</div>
+          ${mapped ? `
+            <div class="guide-box">
+              <strong>朋友收集色盤定位</strong>
+              <span>底部色相條：${mapped.hueSliderX}% / 上方色盤 X：${mapped.paletteX}% / Y：${mapped.paletteY}%</span>
+              <span>${describeTomodachiPalettePosition(matchedPalette.rgb)}</span>
+            </div>
+          ` : ""}
+          <div class="field-row">
+            <label for="cellManualOverrideInput">手動指定這一格的色號</label>
+            <input id="cellManualOverrideInput" class="text-input" type="text" list="paletteIdOptions" value="${resolved?.id || ""}" placeholder="輸入拼豆色號，例如 A1">
+            <small>如果 OCR 看錯，或這格沒有文字，你可以直接在這裡改成正確的拼豆色號。</small>
+          </div>
+          <div class="result-actions">
+            <button type="button" class="secondary-btn" data-action="apply-cell-manual-override">套用手動指定</button>
+            <button type="button" class="ghost-btn" data-action="clear-cell-manual-override">清除手動指定</button>
+            ${matchedPalette ? `<button type="button" class="ghost-btn" data-action="open-palette" data-id="${matchedPalette.id}">查看色卡</button>` : ""}
+            ${matchedPalette ? `<button type="button" class="secondary-btn" data-action="copy-hex" data-hex="${matchedPalette.hex}">複製 HEX</button>` : ""}
+          </div>
+          ${sample?.topCandidates?.length ? `
+            <div>
+              <strong style="display:block; margin-bottom:10px;">這格代表色的前 3 名候選色</strong>
+              ${buildDetailCandidateList(sample.topCandidates)}
+            </div>
+          ` : ""}
+        `;
+      }
+
     }
 
     function openPaletteDetail(id) {
@@ -4522,12 +5652,85 @@
     }
 
     function escapeHtml(text) {
-      return text
+      return String(text ?? "")
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+    }
+
+    function getChartCellByKey(cellKey) {
+      if (!cellKey || !state.chartRecognition?.cells) return null;
+      return state.chartRecognition.cells.find((cell) => cell.key === cellKey) || null;
+    }
+
+    function getCellFromImagePoint(x, y) {
+      if (!state.chartRecognition?.grid) return null;
+      const { grid } = state.chartRecognition;
+      if (x < grid.left || x > grid.right || y < grid.top || y > grid.bottom) return null;
+      const col = locateIndexInLines(x, grid.columnLines);
+      const row = locateIndexInLines(y, grid.rowLines);
+      if (row === -1 || col === -1) return null;
+      return getChartCellByKey(getCellKey(row, col));
+    }
+
+    function getCellRepresentativeInfo(cell) {
+      if (!cell || !state.sourceCanvas) return null;
+      const rgb = sampleCellRepresentativeColor(cell, state.sourceCanvas);
+      const topCandidates = findTopNearestPaletteColors(rgb, 3, state.settings.distanceMethod);
+      return {
+        rgb: [rgb.r, rgb.g, rgb.b],
+        hex: rgbToHex(rgb),
+        topCandidates,
+        nearest: topCandidates[0] || null
+      };
+    }
+
+    function openCellDetail(cellKey) {
+      const cell = getChartCellByKey(cellKey);
+      if (!cell) return;
+      state.detail = { type: "cell", key: cell.key };
+      const resolved = getResolvedCellAssignment(cell);
+      if (resolved?.palette) {
+        setSimulatorFocus(buildSimulatorFocusFromPalette(resolved.palette));
+        setRecentView(resolved.palette.id);
+      }
+      renderAll();
+    }
+
+    function applyCellManualOverride() {
+      if (state.detail?.type !== "cell") return;
+      const cell = getChartCellByKey(state.detail.key);
+      const input = document.getElementById("cellManualOverrideInput");
+      if (!cell || !input) return;
+      const paletteId = input.value.trim().toUpperCase();
+      if (!paletteId) {
+        showToast("請先輸入拼豆色號");
+        return;
+      }
+      if (!paletteById[paletteId]) {
+        showToast("找不到這個拼豆色號");
+        return;
+      }
+      state.chartManualOverrides[cell.key] = paletteId;
+      refreshChartRecognitionDerivedData();
+      saveState();
+      setSimulatorFocus(buildSimulatorFocusFromPalette(paletteById[paletteId]));
+      setRecentView(paletteId);
+      renderAll();
+      showToast(`已把 ${cell.key} 指定成 ${paletteId}`);
+    }
+
+    function clearCellManualOverride() {
+      if (state.detail?.type !== "cell") return;
+      const cell = getChartCellByKey(state.detail.key);
+      if (!cell) return;
+      delete state.chartManualOverrides[cell.key];
+      refreshChartRecognitionDerivedData();
+      saveState();
+      renderAll();
+      showToast(`已清除 ${cell.key} 的手動指定`);
     }
 
     function getImagePixelFromPointer(event) {
@@ -4550,17 +5753,41 @@
     }
 
     function handlePreviewHover(event) {
+      if (state.previewInteractionMode === "cell") {
+        const pixel = getImagePixelFromPointer(event);
+        state.hoverPixel = null;
+        state.hoverCellKey = pixel ? getCellFromImagePoint(pixel.x, pixel.y)?.key || null : null;
+        renderHoverInspector();
+        renderHighlightOverlay();
+        return;
+      }
+
       const pixel = getImagePixelFromPointer(event);
+      state.hoverCellKey = null;
       state.hoverPixel = pixel;
       renderHoverInspector();
+      renderHighlightOverlay();
     }
 
     function handlePreviewLeave() {
       state.hoverPixel = null;
+      state.hoverCellKey = null;
       renderHoverInspector();
+      renderHighlightOverlay();
     }
 
     function handlePreviewClick(event) {
+      if (state.previewInteractionMode === "cell") {
+        const pixel = getImagePixelFromPointer(event);
+        if (!pixel) return;
+        const cell = getCellFromImagePoint(pixel.x, pixel.y);
+        if (!cell) return;
+        openCellDetail(cell.key);
+        renderClickInspector();
+        renderHighlightOverlay();
+        return;
+      }
+
       const pixel = getImagePixelFromPointer(event);
       if (!pixel) return;
       const topCandidates = findTopNearestPaletteColors(pixel.rgb, 3, state.settings.distanceMethod);
@@ -4598,8 +5825,14 @@
       state.imageDataUrl = createPreviewDataUrl(state.sourceImage);
       state.clickedPixel = null;
       state.hoverPixel = null;
+      state.hoverCellKey = null;
       state.analysis = null;
+      state.chartRecognition = null;
       state.activeResultKey = null;
+      state.chartManualOverrides = {};
+      state.previewInteractionMode = "pixel";
+      state.ocrStatusText = "";
+      state.isAnalyzing = false;
       state.detail = null;
       saveState();
       renderAll();
@@ -4619,29 +5852,81 @@
       return sampleCanvas;
     }
 
-    function analyzeImage() {
+    async function analyzeImage() {
       if (!state.sourceImage) return;
+      const runId = state.analysisRunId + 1;
+      state.analysisRunId = runId;
+      state.isAnalyzing = true;
+      state.activeResultKey = null;
+      state.clickedPixel = null;
+      state.hoverPixel = null;
+      state.hoverCellKey = null;
+      state.detail = null;
+      state.chartRecognition = null;
+      state.ocrStatusText = "正在整理圖片顏色與色號...";
+      renderAll();
+
       const sampleCanvas = createSampleCanvasFromSource();
       const sampleCtx = sampleCanvas.getContext("2d");
       const sampleImageData = sampleCtx.getImageData(0, 0, sampleCanvas.width, sampleCanvas.height);
       const settings = getAnalysisSettingsSnapshot();
       const extracted = extractDominantColors(sampleImageData, settings);
-      state.analysis = {
-        ...extracted,
-        settingsSnapshot: settings
-      };
-      const results = getDisplayedResults();
-      state.activeResultKey = null;
-      if (results.length) {
-        setSimulatorFocus(buildSimulatorFocusFromResult(results[0]));
-      } else {
-        setSimulatorFocus(buildDefaultSimulatorFocus());
+
+      try {
+        state.analysis = {
+          ...extracted,
+          settingsSnapshot: settings
+        };
+        if (runId !== state.analysisRunId) return;
+
+        let chartRecognition = null;
+        try {
+          state.ocrStatusText = "正在辨識圖上的格子與色號...";
+          renderRecognitionResults();
+          chartRecognition = await recognizeChartColorsFromImage();
+        } catch (error) {
+          console.error("Chart OCR failed:", error);
+          state.ocrStatusText = "OCR 辨識失敗，已保留一般顏色分析結果。";
+        }
+
+        if (runId !== state.analysisRunId) return;
+
+        state.chartRecognition = chartRecognition;
+        if (chartRecognition?.summary?.length) {
+          state.previewInteractionMode = "cell";
+          state.ocrStatusText = `已辨識 ${chartRecognition.summary.length} 種色號；若某格沒有文字，已自動以顏色回退補上。`;
+          const firstId = chartRecognition.summary[0]?.id;
+          if (firstId && paletteById[firstId]) {
+            setSimulatorFocus(buildSimulatorFocusFromPalette(paletteById[firstId]));
+          } else {
+            setSimulatorFocus(buildDefaultSimulatorFocus());
+          }
+        } else {
+          state.previewInteractionMode = "pixel";
+          state.ocrStatusText = "這張圖沒有建立出穩定的格子 / 色號層，已保留一般顏色分析結果。";
+          const results = getDisplayedResults();
+          if (results.length) {
+            setSimulatorFocus(buildSimulatorFocusFromResult(results[0]));
+          } else {
+            setSimulatorFocus(buildDefaultSimulatorFocus());
+          }
+        }
+
+        const results = getDisplayedResults();
+        saveState();
+        renderAll();
+        els.imageStatusText.textContent = chartRecognition?.summary?.length
+          ? `分析完成：${state.imageName || "圖片"}。已辨識 ${chartRecognition.summary.length} 種拼豆色號，並整理出 ${results.length} 組顏色結果。`
+          : `分析完成：${state.imageName || "圖片"}。共整理出 ${results.length} 組顏色結果。`;
+        showToast(chartRecognition?.summary?.length
+          ? `分析完成，已辨識 ${chartRecognition.summary.length} 種色號`
+          : `分析完成，共整理出 ${results.length} 組顏色結果`);
+      } finally {
+        if (runId === state.analysisRunId) {
+          state.isAnalyzing = false;
+          renderAll();
+        }
       }
-      state.clickedPixel = null;
-      saveState();
-      renderAll();
-      els.imageStatusText.textContent = `分析完成：${state.imageName || "圖片"}。共整理出 ${results.length} 組顏色結果。`;
-      showToast(`分析完成，共整理出 ${results.length} 組顏色結果`);
     }
 
     function buildExportRows() {
@@ -4716,7 +6001,9 @@
         recentViews: state.recentViews,
         imageDataUrl: state.imageDataUrl,
         imageName: state.imageName,
-        manualOverrides: state.manualOverrides
+        manualOverrides: state.manualOverrides,
+        chartManualOverrides: state.chartManualOverrides,
+        previewInteractionMode: state.previewInteractionMode
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     }
@@ -4734,12 +6021,16 @@
         state.manualOverrides = Object.fromEntries(
           Object.entries(saved.manualOverrides || {}).filter(([, paletteId]) => paletteById[paletteId])
         );
+        state.chartManualOverrides = Object.fromEntries(
+          Object.entries(saved.chartManualOverrides || {}).filter(([, paletteId]) => paletteById[paletteId])
+        );
+        state.previewInteractionMode = saved.previewInteractionMode === "cell" ? "cell" : "pixel";
         syncSettingsInputs();
         els.paletteSearchInput.value = state.paletteSearch;
         if (saved.imageDataUrl) {
           await loadImageFromDataUrl(saved.imageDataUrl, saved.imageName || "最近分析圖片");
           els.imageStatusText.textContent = `已還原最近一次圖片：${state.imageName || "最近分析圖片"}。`;
-          analyzeImage();
+          await analyzeImage();
         }
       } catch (error) {
         console.error("Restore state failed:", error);
@@ -4756,12 +6047,18 @@
       state.imageName = "";
       state.sourceImage = null;
       state.analysis = null;
+      state.chartRecognition = null;
       state.hoverPixel = null;
+      state.hoverCellKey = null;
       state.clickedPixel = null;
       state.manualOverrides = {};
+      state.chartManualOverrides = {};
       state.detail = null;
       state.activeResultKey = null;
       state.simulatorFocus = null;
+      state.previewInteractionMode = "pixel";
+      state.ocrStatusText = "";
+      state.isAnalyzing = false;
       localStorage.removeItem(STORAGE_KEY);
       els.imageInput.value = "";
       els.paletteSearchInput.value = "";
@@ -4773,6 +6070,11 @@
 
     function renderAnalysisSummary() {
       const results = getDisplayedResults();
+      if (state.chartRecognition?.summary?.length) {
+        const resolvedCells = state.chartRecognition.cells.filter((cell) => getResolvedCellAssignment(cell)).length;
+        els.analysisSummaryPill.textContent = `OCR ${state.chartRecognition.summary.length} 色號 / ${resolvedCells} 格`;
+        return;
+      }
       if (!state.analysis || !results.length) {
         els.analysisSummaryPill.textContent = "尚未分析";
         return;
@@ -4785,6 +6087,8 @@
       renderTabs();
       renderPaletteBrowser();
       renderRecentViews();
+      renderPreviewModeControls();
+      renderRecognitionResults();
       renderTop10();
       renderResults();
       renderPreview();
@@ -4813,6 +6117,18 @@
       if (action === "open-result") {
         openResultDetail(target.dataset.key);
       }
+      if (action === "set-preview-mode") {
+        const nextMode = target.dataset.mode === "cell" ? "cell" : "pixel";
+        if (nextMode === "cell" && !state.chartRecognition?.cells?.length) {
+          showToast("這張圖目前沒有可用的格子辨識結果");
+        } else {
+          state.previewInteractionMode = nextMode;
+          state.hoverPixel = null;
+          state.hoverCellKey = null;
+          saveState();
+          renderAll();
+        }
+      }
       if (action === "highlight-result") {
         const item = getDisplayedResults().find((result) => result.key === target.dataset.key);
         if (item) {
@@ -4826,6 +6142,12 @@
       }
       if (action === "clear-manual-override") {
         clearManualOverride();
+      }
+      if (action === "apply-cell-manual-override") {
+        applyCellManualOverride();
+      }
+      if (action === "clear-cell-manual-override") {
+        clearCellManualOverride();
       }
       if (action === "set-pixel-focus-mode" && state.detail?.type === "pixel") {
         const mode = target.dataset.mode === "matched" ? "matched" : "raw";
@@ -4849,8 +6171,8 @@
         }
       });
 
-      els.analyzeButton.addEventListener("click", () => {
-        analyzeImage();
+      els.analyzeButton.addEventListener("click", async () => {
+        await analyzeImage();
       });
 
       els.resetButton.addEventListener("click", resetState);
@@ -4859,7 +6181,7 @@
         state.settings.colorLimitMode = event.target.value;
         els.customColorLimitInput.disabled = state.settings.colorLimitMode !== "custom";
         saveState();
-        if (state.analysis) analyzeImage();
+        if (state.analysis) void analyzeImage();
         renderAll();
       });
 
@@ -4869,26 +6191,26 @@
       });
 
       els.customColorLimitInput.addEventListener("change", () => {
-        if (state.settings.colorLimitMode === "custom" && state.analysis) analyzeImage();
+        if (state.settings.colorLimitMode === "custom" && state.analysis) void analyzeImage();
       });
 
       els.distanceMethodSelect.addEventListener("change", (event) => {
         state.settings.distanceMethod = event.target.value;
         saveState();
-        if (state.analysis) analyzeImage();
+        if (state.analysis) void analyzeImage();
         else renderAll();
       });
 
       els.ignoreTransparentCheckbox.addEventListener("change", (event) => {
         state.settings.ignoreTransparent = event.target.checked;
         saveState();
-        if (state.analysis) analyzeImage();
+        if (state.analysis) void analyzeImage();
       });
 
       els.mergeSimilarCheckbox.addEventListener("change", (event) => {
         state.settings.mergeSimilar = event.target.checked;
         saveState();
-        if (state.analysis) analyzeImage();
+        if (state.analysis) void analyzeImage();
       });
 
       els.analysisModeRadios.forEach((radio) => {

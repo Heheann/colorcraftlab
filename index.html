@@ -4460,7 +4460,6 @@
       const item = getDisplayedResults().find((result) => result.key === key);
       if (!item) return;
       state.detail = { type: "result", item };
-      state.activeResultKey = key;
       setSimulatorFocus(buildSimulatorFocusFromResult(item));
       setRecentView(item.matchedId);
       renderAll();
@@ -4500,7 +4499,6 @@
       const refreshed = getResultBySourceKey(state.detail.item.sources[0]);
       if (refreshed) {
         state.detail = { type: "result", item: refreshed };
-        state.activeResultKey = refreshed.key;
         setSimulatorFocus(buildSimulatorFocusFromResult(refreshed));
       }
       setRecentView(paletteId);
@@ -4517,7 +4515,6 @@
       const refreshed = getResultBySourceKey(state.detail.item.sources[0]);
       if (refreshed) {
         state.detail = { type: "result", item: refreshed };
-        state.activeResultKey = refreshed.key;
         setSimulatorFocus(buildSimulatorFocusFromResult(refreshed));
       }
       renderAll();
@@ -4617,7 +4614,7 @@
       sampleCanvas.width = Math.max(1, Math.round(image.width * scale));
       sampleCanvas.height = Math.max(1, Math.round(image.height * scale));
       const ctx = sampleCanvas.getContext("2d");
-      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(image, 0, 0, sampleCanvas.width, sampleCanvas.height);
       return sampleCanvas;
     }
@@ -4634,7 +4631,7 @@
         settingsSnapshot: settings
       };
       const results = getDisplayedResults();
-      state.activeResultKey = results.length ? results[0].key : null;
+      state.activeResultKey = null;
       if (results.length) {
         setSimulatorFocus(buildSimulatorFocusFromResult(results[0]));
       } else {

@@ -10,6 +10,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GEE7ENLG3E"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-GEE7ENLG3E');
+  </script>
   <title>《朋友收集》色盤對照工具</title>
   <style>
     :root {
@@ -2824,6 +2833,10 @@
 
     const paletteById = Object.fromEntries(BUILTIN_PALETTE.map((item) => [item.id, item]));
     const STORAGE_KEY = "perler-hex-tool:v1";
+    const IMAGE_DB_NAME = "perler-hex-tool-images";
+    const IMAGE_DB_VERSION = 1;
+    const IMAGE_STORE_NAME = "uploads";
+    const LAST_IMAGE_STORE_KEY = "last-upload";
     const MAX_RECENT = 10;
     const DEFAULT_SETTINGS = {
       colorLimitMode: "16",
@@ -2841,6 +2854,7 @@
       paletteSearch: "",
       recentViews: [],
       imageDataUrl: "",
+      imageStoreKey: "",
       imageName: "",
       sourceImage: null,
       sourceCanvas: document.createElement("canvas"),
@@ -2859,6 +2873,7 @@
       ocrStatusText: "",
       tesseractScriptPromise: null,
       tesseractWorker: null,
+      imageDbPromise: null,
       analysisRunId: 0
     };
 
@@ -3285,15 +3300,94 @@
       };
     }
 
-    function createPreviewDataUrl(image) {
-      const previewCanvas = document.createElement("canvas");
-      const maxSide = 1200;
-      const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
-      previewCanvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
-      previewCanvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
-      const ctx = previewCanvas.getContext("2d");
-      ctx.drawImage(image, 0, 0, previewCanvas.width, previewCanvas.height);
-      return previewCanvas.toDataURL("image/png");
+    function openImageDatabase() {
+      if (!window.indexedDB) {
+        return Promise.resolve(null);
+      }
+      if (state.imageDbPromise) {
+        return state.imageDbPromise;
+      }
+
+      state.imageDbPromise = new Promise((resolve, reject) => {
+        const request = window.indexedDB.open(IMAGE_DB_NAME, IMAGE_DB_VERSION);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+            db.createObjectStore(IMAGE_STORE_NAME);
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
+      }).catch((error) => {
+        console.warn("IndexedDB unavailable:", error);
+        state.imageDbPromise = null;
+        return null;
+      });
+
+      return state.imageDbPromise;
+    }
+
+    async function saveImageBlobToStore(blob, key = LAST_IMAGE_STORE_KEY) {
+      const db = await openImageDatabase();
+      if (!db) return false;
+
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+        const store = transaction.objectStore(IMAGE_STORE_NAME);
+        store.put(blob, key);
+        transaction.oncomplete = () => resolve(true);
+        transaction.onerror = () => reject(transaction.error || new Error("IndexedDB write failed"));
+        transaction.onabort = () => reject(transaction.error || new Error("IndexedDB write aborted"));
+      }).catch((error) => {
+        console.warn("Failed to save image blob:", error);
+        return false;
+      });
+    }
+
+    async function loadImageBlobFromStore(key = LAST_IMAGE_STORE_KEY) {
+      const db = await openImageDatabase();
+      if (!db) return null;
+
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(IMAGE_STORE_NAME, "readonly");
+        const store = transaction.objectStore(IMAGE_STORE_NAME);
+        const request = store.get(key);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error || new Error("IndexedDB read failed"));
+      }).catch((error) => {
+        console.warn("Failed to load image blob:", error);
+        return null;
+      });
+    }
+
+    async function deleteImageBlobFromStore(key = LAST_IMAGE_STORE_KEY) {
+      const db = await openImageDatabase();
+      if (!db) return false;
+
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(IMAGE_STORE_NAME, "readwrite");
+        const store = transaction.objectStore(IMAGE_STORE_NAME);
+        store.delete(key);
+        transaction.oncomplete = () => resolve(true);
+        transaction.onerror = () => reject(transaction.error || new Error("IndexedDB delete failed"));
+        transaction.onabort = () => reject(transaction.error || new Error("IndexedDB delete aborted"));
+      }).catch((error) => {
+        console.warn("Failed to delete image blob:", error);
+        return false;
+      });
+    }
+
+    function getCanvasDeviceScale() {
+      return clamp(window.devicePixelRatio || 1, 1, 3);
+    }
+
+    function configureDisplayCanvas(canvas, cssWidth, cssHeight) {
+      const dpr = getCanvasDeviceScale();
+      canvas.width = Math.max(1, Math.round(cssWidth * dpr));
+      canvas.height = Math.max(1, Math.round(cssHeight * dpr));
+      canvas.style.width = `${cssWidth}px`;
+      canvas.style.height = `${cssHeight}px`;
+      return dpr;
     }
 
     function sortPaletteIds(a, b) {
@@ -4920,6 +5014,12 @@
       return Math.min(1, availableWidth / imageWidth, availableHeight / imageHeight);
     }
 
+    function getPreviewDisplaySize() {
+      const width = parseFloat(els.previewCanvas.style.width) || (els.previewCanvas.width / getCanvasDeviceScale()) || 0;
+      const height = parseFloat(els.previewCanvas.style.height) || (els.previewCanvas.height / getCanvasDeviceScale()) || 0;
+      return { width, height };
+    }
+
     function renderPreview() {
       const hasImage = Boolean(state.sourceImage);
       els.analyzeButton.disabled = !hasImage;
@@ -4939,17 +5039,20 @@
       const displayScale = baseScale * state.settings.zoom;
       const drawWidth = Math.max(1, Math.round(image.width * displayScale));
       const drawHeight = Math.max(1, Math.round(image.height * displayScale));
+      const previewDpr = configureDisplayCanvas(els.previewCanvas, drawWidth, drawHeight);
+      const highlightDpr = configureDisplayCanvas(els.highlightCanvas, drawWidth, drawHeight);
 
-      els.previewCanvas.width = drawWidth;
-      els.previewCanvas.height = drawHeight;
-      els.highlightCanvas.width = drawWidth;
-      els.highlightCanvas.height = drawHeight;
       els.previewStage.style.width = `${drawWidth}px`;
       els.previewStage.style.height = `${drawHeight}px`;
 
-      els.previewCtx.clearRect(0, 0, drawWidth, drawHeight);
+      els.previewCtx.setTransform(1, 0, 0, 1, 0, 0);
+      els.previewCtx.clearRect(0, 0, els.previewCanvas.width, els.previewCanvas.height);
+      els.previewCtx.setTransform(previewDpr, 0, 0, previewDpr, 0, 0);
       els.previewCtx.imageSmoothingEnabled = false;
       els.previewCtx.drawImage(image, 0, 0, drawWidth, drawHeight);
+      els.highlightCtx.setTransform(1, 0, 0, 1, 0, 0);
+      els.highlightCtx.clearRect(0, 0, els.highlightCanvas.width, els.highlightCanvas.height);
+      els.highlightCtx.setTransform(highlightDpr, 0, 0, highlightDpr, 0, 0);
 
       els.sampleInfoText.textContent = `${state.imageName || "未命名圖片"} / 原始尺寸 ${image.width} × ${image.height}`;
       renderHighlightOverlay();
@@ -4958,7 +5061,8 @@
     function renderHighlightOverlay() {
       const ctx = els.highlightCtx;
       const canvas = els.highlightCanvas;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const { width: displayWidth, height: displayHeight } = getPreviewDisplaySize();
+      ctx.clearRect(0, 0, displayWidth, displayHeight);
 
       if (state.analysis && state.activeResultKey) {
         const displayItem = getDisplayedResults().find((item) => item.key === state.activeResultKey);
@@ -4988,10 +5092,10 @@
             maskCtx.putImageData(maskImage, 0, 0);
             ctx.save();
             ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(maskCanvas, 0, 0, displayWidth, displayHeight);
             ctx.globalCompositeOperation = "source-in";
             ctx.fillStyle = "rgba(255, 127, 96, 0.34)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, displayWidth, displayHeight);
             ctx.restore();
           }
         }
@@ -5005,8 +5109,8 @@
       const detailCell = state.detail?.type === "cell"
         ? getChartCellByKey(state.detail.key)
         : null;
-      const scaleX = canvas.width / state.sourceImage.width;
-      const scaleY = canvas.height / state.sourceImage.height;
+      const scaleX = displayWidth / state.sourceImage.width;
+      const scaleY = displayHeight / state.sourceImage.height;
 
       const drawCellOutline = (cell, style = {}) => {
         if (!cell) return;
@@ -5796,54 +5900,82 @@
       openPixelDetail(state.clickedPixel);
     }
 
-    function loadImageFromDataUrl(dataUrl, imageName = "") {
+    function loadImageFromSource(src, imageName = "", options = {}) {
       return new Promise((resolve, reject) => {
         const image = new Image();
+        const revokeSrc = options.revokeSrc === true;
         image.onload = () => {
           state.sourceImage = image;
-          state.imageDataUrl = dataUrl;
           state.imageName = imageName;
           state.sourceCanvas.width = image.width;
           state.sourceCanvas.height = image.height;
-          state.sourceCanvas.getContext("2d").drawImage(image, 0, 0);
+          const sourceCtx = state.sourceCanvas.getContext("2d");
+          sourceCtx.setTransform(1, 0, 0, 1, 0, 0);
+          sourceCtx.clearRect(0, 0, state.sourceCanvas.width, state.sourceCanvas.height);
+          sourceCtx.drawImage(image, 0, 0);
+          if (revokeSrc) {
+            URL.revokeObjectURL(src);
+          }
           resolve(image);
         };
-        image.onerror = reject;
-        image.src = dataUrl;
+        image.onerror = (error) => {
+          if (revokeSrc) {
+            URL.revokeObjectURL(src);
+          }
+          reject(error);
+        };
+        image.src = src;
       });
+    }
+
+    function loadImageFromDataUrl(dataUrl, imageName = "") {
+      state.imageDataUrl = dataUrl;
+      return loadImageFromSource(dataUrl, imageName);
+    }
+
+    function loadImageFromBlob(blob, imageName = "") {
+      const objectUrl = URL.createObjectURL(blob);
+      state.imageDataUrl = "";
+      return loadImageFromSource(objectUrl, imageName, { revokeSrc: true });
     }
 
     async function handleImageFile(file) {
       if (!file) return;
-      const reader = new FileReader();
-      const result = await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      await loadImageFromDataUrl(result, file.name);
-      state.imageDataUrl = createPreviewDataUrl(state.sourceImage);
+      await loadImageFromBlob(file, file.name);
+      state.imageStoreKey = "";
+      state.imageDataUrl = "";
+      const persisted = await saveImageBlobToStore(file, LAST_IMAGE_STORE_KEY);
+      let qualityMessage = "";
+      if (persisted) {
+        state.imageStoreKey = LAST_IMAGE_STORE_KEY;
+      } else {
+        qualityMessage = "這次圖片會維持當前視窗的原畫質，但瀏覽器儲存空間不足，重新整理後可能不會自動還原。";
+      }
       state.clickedPixel = null;
       state.hoverPixel = null;
       state.hoverCellKey = null;
       state.analysis = null;
       state.chartRecognition = null;
+      state.manualOverrides = {};
       state.activeResultKey = null;
       state.chartManualOverrides = {};
       state.previewInteractionMode = "pixel";
-      state.ocrStatusText = "";
+      state.ocrStatusText = qualityMessage;
       state.isAnalyzing = false;
       state.detail = null;
       saveState();
       renderAll();
-      els.imageStatusText.textContent = `已載入圖片：${file.name}。現在可以按「分析圖片」。`;
+      els.imageStatusText.textContent = persisted
+        ? `已載入原始圖片：${file.name}。現在可以按「分析圖片」。`
+        : `已載入原始圖片：${file.name}。目前僅保留在這次視窗，重新整理後可能需要重新上傳。`;
     }
 
     function createSampleCanvasFromSource() {
       const image = state.sourceImage;
       const sampleCanvas = document.createElement("canvas");
-      const maxSide = 220;
-      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const longestSide = Math.max(image.width, image.height);
+      const maxSide = clamp(Math.round(longestSide * 0.42), 480, 960);
+      const scale = Math.min(1, maxSide / longestSide);
       sampleCanvas.width = Math.max(1, Math.round(image.width * scale));
       sampleCanvas.height = Math.max(1, Math.round(image.height * scale));
       const ctx = sampleCanvas.getContext("2d");
@@ -5999,7 +6131,7 @@
         activeTab: state.activeTab,
         paletteSearch: state.paletteSearch,
         recentViews: state.recentViews,
-        imageDataUrl: state.imageDataUrl,
+        imageStoreKey: state.imageStoreKey,
         imageName: state.imageName,
         manualOverrides: state.manualOverrides,
         chartManualOverrides: state.chartManualOverrides,
@@ -6018,6 +6150,7 @@
         state.activeTab = saved.activeTab === "palette" ? "palette" : "analyze";
         state.paletteSearch = saved.paletteSearch || "";
         state.recentViews = Array.isArray(saved.recentViews) ? saved.recentViews.filter((id) => paletteById[id]) : [];
+        state.imageStoreKey = saved.imageStoreKey || "";
         state.manualOverrides = Object.fromEntries(
           Object.entries(saved.manualOverrides || {}).filter(([, paletteId]) => paletteById[paletteId])
         );
@@ -6027,9 +6160,18 @@
         state.previewInteractionMode = saved.previewInteractionMode === "cell" ? "cell" : "pixel";
         syncSettingsInputs();
         els.paletteSearchInput.value = state.paletteSearch;
-        if (saved.imageDataUrl) {
-          await loadImageFromDataUrl(saved.imageDataUrl, saved.imageName || "最近分析圖片");
-          els.imageStatusText.textContent = `已還原最近一次圖片：${state.imageName || "最近分析圖片"}。`;
+        const storedBlob = state.imageStoreKey
+          ? await loadImageBlobFromStore(state.imageStoreKey)
+          : null;
+
+        if (storedBlob) {
+          await loadImageFromBlob(storedBlob, saved.imageName || "最近分析圖片");
+          els.imageStatusText.textContent = `已還原最近一次原始圖片：${state.imageName || "最近分析圖片"}。`;
+          await analyzeImage();
+        } else if (saved.imageDataUrl) {
+          await loadImageFromDataUrl(saved.imageDataUrl, saved.imageName || "舊版快取圖片");
+          state.imageStoreKey = "";
+          els.imageStatusText.textContent = "已還原舊版快取圖片。這張圖可能不是原始畫質，建議重新上傳一次。";
           await analyzeImage();
         }
       } catch (error) {
@@ -6044,6 +6186,7 @@
       state.paletteSearch = "";
       state.recentViews = [];
       state.imageDataUrl = "";
+      state.imageStoreKey = "";
       state.imageName = "";
       state.sourceImage = null;
       state.analysis = null;
@@ -6060,6 +6203,7 @@
       state.ocrStatusText = "";
       state.isAnalyzing = false;
       localStorage.removeItem(STORAGE_KEY);
+      void deleteImageBlobFromStore(LAST_IMAGE_STORE_KEY);
       els.imageInput.value = "";
       els.paletteSearchInput.value = "";
       els.imageStatusText.textContent = "尚未載入圖片，現在可以先瀏覽下方的 221 色色卡。";

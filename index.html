@@ -128,6 +128,15 @@
                   </div>
                   <span class="pill" id="analysisSummaryPill">尚未分析</span>
                 </div>
+                <div class="preview-toolbar overview-preview-toolbar">
+                  <div class="zoom-wrap overview-zoom-wrap">
+                    <button id="overviewZoomOutButton" type="button" class="mini-btn" aria-label="縮小預覽">-</button>
+                    <input id="overviewZoomRange" type="range" min="20" max="500" value="100" aria-label="總覽預覽縮放">
+                    <span class="mono" id="overviewZoomLabel">100%</span>
+                    <button id="overviewZoomInButton" type="button" class="mini-btn" aria-label="放大預覽">+</button>
+                  </div>
+                  <button id="overviewZoomResetButton" type="button" class="mini-btn overview-zoom-reset">重設 100%</button>
+                </div>
                 <div class="preview-shell">
                   <div class="preview-stage" id="previewStage">
                     <canvas id="previewCanvas"></canvas>

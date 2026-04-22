@@ -576,6 +576,24 @@
       accent-color: var(--accent-mint);
     }
 
+    .overview-preview-toolbar {
+      padding: 4px 0 2px;
+    }
+
+    .overview-zoom-wrap {
+      flex: 1 1 420px;
+      min-width: 0;
+    }
+
+    .overview-zoom-wrap input[type="range"] {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .overview-zoom-reset {
+      white-space: nowrap;
+    }
+
     .preview-shell {
       position: relative;
       overflow: auto;
@@ -3277,6 +3295,10 @@
     min-height: 460px;
   }
 
+  .preview-panel-main .preview-shell {
+    scroll-behavior: smooth;
+  }
+
   .advanced-body .inset-panel {
     margin: 0;
     background: rgba(255, 255, 255, 0.38);
@@ -3391,6 +3413,18 @@
 
     .preview-panel-main .preview-stage {
       min-height: 260px;
+    }
+
+    .overview-preview-toolbar {
+      align-items: stretch;
+    }
+
+    .overview-zoom-wrap {
+      width: 100%;
+    }
+
+    .overview-preview-toolbar .overview-zoom-reset {
+      width: 100%;
     }
   }
 

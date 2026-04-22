@@ -243,6 +243,11 @@
       mergeSimilarCheckbox: document.getElementById("mergeSimilarCheckbox"),
       zoomRange: document.getElementById("zoomRange"),
       zoomLabel: document.getElementById("zoomLabel"),
+      overviewZoomRange: document.getElementById("overviewZoomRange"),
+      overviewZoomLabel: document.getElementById("overviewZoomLabel"),
+      overviewZoomOutButton: document.getElementById("overviewZoomOutButton"),
+      overviewZoomInButton: document.getElementById("overviewZoomInButton"),
+      overviewZoomResetButton: document.getElementById("overviewZoomResetButton"),
       sampleInfoText: document.getElementById("sampleInfoText"),
       previewStage: document.getElementById("previewStage"),
       previewCanvas: document.getElementById("previewCanvas"),
@@ -299,6 +304,32 @@
     function round(value, digits = 1) {
       const factor = 10 ** digits;
       return Math.round(value * factor) / factor;
+    }
+
+    function syncPreviewZoomControls() {
+      state.settings.zoom = clamp(state.settings.zoom, 0.2, 5);
+      const zoomValue = Math.round(state.settings.zoom * 100);
+      if (els.zoomRange) {
+        els.zoomRange.value = zoomValue;
+      }
+      if (els.zoomLabel) {
+        els.zoomLabel.textContent = `${zoomValue}%`;
+      }
+      if (els.overviewZoomRange) {
+        els.overviewZoomRange.value = zoomValue;
+      }
+      if (els.overviewZoomLabel) {
+        els.overviewZoomLabel.textContent = `${zoomValue}%`;
+      }
+    }
+
+    function setPreviewZoom(nextZoom, { persist = true } = {}) {
+      state.settings.zoom = clamp(nextZoom, 0.2, 5);
+      syncPreviewZoomControls();
+      renderPreview();
+      if (persist) {
+        saveState();
+      }
     }
 
     function hexToRgb(hex) {
@@ -1983,8 +2014,7 @@
       els.analysisModeRadios.forEach((radio) => {
         radio.checked = radio.value === state.settings.mode;
       });
-      els.zoomRange.value = Math.round(state.settings.zoom * 100);
-      els.zoomLabel.textContent = `${Math.round(state.settings.zoom * 100)}%`;
+      syncPreviewZoomControls();
     }
 
     function renderPaletteOptions() {
@@ -3731,10 +3761,23 @@
       });
 
       els.zoomRange.addEventListener("input", (event) => {
-        state.settings.zoom = clamp((parseInt(event.target.value, 10) || 100) / 100, 0.2, 5);
-        els.zoomLabel.textContent = `${Math.round(state.settings.zoom * 100)}%`;
-        renderPreview();
-        saveState();
+        setPreviewZoom((parseInt(event.target.value, 10) || 100) / 100);
+      });
+
+      els.overviewZoomRange?.addEventListener("input", (event) => {
+        setPreviewZoom((parseInt(event.target.value, 10) || 100) / 100);
+      });
+
+      els.overviewZoomOutButton?.addEventListener("click", () => {
+        setPreviewZoom(round(state.settings.zoom - 0.1, 2));
+      });
+
+      els.overviewZoomInButton?.addEventListener("click", () => {
+        setPreviewZoom(round(state.settings.zoom + 0.1, 2));
+      });
+
+      els.overviewZoomResetButton?.addEventListener("click", () => {
+        setPreviewZoom(DEFAULT_SETTINGS.zoom);
       });
 
       els.paletteSearchInput.addEventListener("input", (event) => {
@@ -4812,8 +4855,7 @@
       els.analysisModeRadios.forEach((radio) => {
         radio.checked = radio.value === state.settings.mode;
       });
-      els.zoomRange.value = Math.round(state.settings.zoom * 100);
-      els.zoomLabel.textContent = `${Math.round(state.settings.zoom * 100)}%`;
+      syncPreviewZoomControls();
       els.paletteSearchInput.value = state.paletteSearch;
 
       if (els.paletteGroupFilter) {
@@ -5268,10 +5310,23 @@
       });
 
       els.zoomRange.addEventListener("input", (event) => {
-        state.settings.zoom = clamp((parseInt(event.target.value, 10) || 100) / 100, 0.2, 5);
-        els.zoomLabel.textContent = `${Math.round(state.settings.zoom * 100)}%`;
-        renderPreview();
-        saveState();
+        setPreviewZoom((parseInt(event.target.value, 10) || 100) / 100);
+      });
+
+      els.overviewZoomRange?.addEventListener("input", (event) => {
+        setPreviewZoom((parseInt(event.target.value, 10) || 100) / 100);
+      });
+
+      els.overviewZoomOutButton?.addEventListener("click", () => {
+        setPreviewZoom(round(state.settings.zoom - 0.1, 2));
+      });
+
+      els.overviewZoomInButton?.addEventListener("click", () => {
+        setPreviewZoom(round(state.settings.zoom + 0.1, 2));
+      });
+
+      els.overviewZoomResetButton?.addEventListener("click", () => {
+        setPreviewZoom(DEFAULT_SETTINGS.zoom);
       });
 
       els.paletteSearchInput.addEventListener("input", (event) => {

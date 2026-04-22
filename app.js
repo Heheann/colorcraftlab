@@ -2869,7 +2869,7 @@
 
     function renderDetailDrawer() {
       const detail = state.detail;
-      const isOpen = Boolean(detail) && state.activeView !== "palette";
+      const isOpen = Boolean(detail);
       els.detailOverlay.classList.toggle("is-open", isOpen);
       els.detailDrawer.classList.toggle("is-open", isOpen);
       els.detailDrawer.setAttribute("aria-hidden", String(!isOpen));
@@ -4403,8 +4403,7 @@
         ? `找到 ${filtered.length} 筆結果${filterSummary.length ? `，條件：${filterSummary.join(" / ")}` : ""}。`
         : `顯示全部 ${BUILTIN_PALETTE.length} 色。`;
 
-      const activeItem = getPaletteInspectorItem(filtered);
-      const activeId = activeItem?.id || "";
+      const activeId = state.detail?.type === "palette" ? state.detail.id : "";
       const orderedGroups = ["A", "B", "C", "D", "E", "F", "G", "H", "M"];
       const grouped = orderedGroups
         .map((group) => ({
@@ -4443,7 +4442,6 @@
           `).join("")
         : `<div class="empty-state">找不到符合目前篩選條件的色票。</div>`;
 
-      renderPaletteInspector(filtered);
     }
 
     function renderHistoryView() {
@@ -5115,8 +5113,6 @@
         renderTomodachiSimulator();
       } else if (state.activeView === "analysis") {
         renderAnalysisWorkspace();
-      } else if (state.activeView === "palette") {
-        renderPaletteInspector();
       }
     }
 
@@ -5466,9 +5462,6 @@
         }
         if (state.activeView === "overview") {
           renderTomodachiSimulator();
-        }
-        if (state.activeView === "palette") {
-          renderPaletteInspector();
         }
       });
 

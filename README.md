@@ -13,7 +13,10 @@
 
 ## GitHub Pages
 
-這個專案是純前端靜態頁面，根目錄的 [index.html](./index.html) 可直接作為 GitHub Pages 入口頁。
+這個專案是純前端靜態頁面，根目錄的 [index.html](./index.html) 可直接作為 GitHub Pages 入口頁，並搭配：
+
+- [styles.css](./styles.css)：介面樣式與主題
+- [app.js](./app.js)：分析邏輯、狀態管理與互動
 
 建議設定：
 
